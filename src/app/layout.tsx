@@ -5,11 +5,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "El Numerador — Observatorio de Activos Globales",
   description:
-    "Tracking de activos globales en tiempo real. Supply, stock-to-flow, dilución. Los activos tambi\u00e9n se diluyen. Unos m\u00e1s que otros.",
+    "\u00bfY si nada subi\u00f3? La oferta de activos tambi\u00e9n crece. Supply, diluci\u00f3n, stock-to-flow y escasez de las principales clases de activos globales.",
   keywords: [
     "activos globales",
     "supply",
     "stock-to-flow",
+    "escasez",
+    "diluci\u00f3n",
     "oro",
     "acciones",
     "bitcoin",
@@ -21,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "El Numerador",
     description:
-      "Cada precio es una fracci\u00f3n. Esto trackea el de arriba.",
+      "\u00bfY si nada subi\u00f3? Todo precio es una fracci\u00f3n. Esto trackea el de arriba.",
     url: "https://elnumerador.com",
     siteName: "El Numerador",
     type: "website",
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "El Numerador",
     description:
-      "Cada precio es una fracci\u00f3n. Esto trackea el de arriba.",
+      "\u00bfY si nada subi\u00f3? Todo precio es una fracci\u00f3n. Esto trackea el de arriba.",
   },
   icons: {
     icon: "/favicon.svg",

@@ -299,7 +299,7 @@ export default function Dashboard() {
         </div>
       </ChartSection>
 
-      {/* 2. Two column: Supply Indexed */}
+      {/* ACT 2 cont. — Two column: Supply Indexed + Annual Dilution */}
       <div className="grid lg:grid-cols-2 gap-4 sm:gap-5 mt-4 sm:mt-6">
         {/* Supply Indexed — All assets */}
         <ChartSection
@@ -342,52 +342,36 @@ export default function Dashboard() {
           />
         </ChartSection>
 
-        {/* ACT 4 — LA MÉTRICA: Stock-to-Flow */}
+        {/* Annual Dilution — velocidad */}
         <ChartSection
-          title="Stock-to-Flow &mdash; Midiendo la escasez"
-          subtitle={`Cu\u00e1ntos a\u00f1os de producci\u00f3n actual representan el stock existente. Mayor S2F = m\u00e1s escaso. Oro: ~62. Bitcoin: creciente despu\u00e9s de cada halving. Acciones: ~20. Bonos: ~12. La escasez de Bitcoin es programada, verificable y creciente. Proyecci\u00f3n hasta 2050.`}
+          title="La velocidad de la diluci&oacute;n"
+          subtitle="Crecimiento anual (%) de la oferta de cada activo. El oro crece ~1.5% al a&ntilde;o. Los bonos y acciones, entre 3% y 8%. Bitcoin se acerca a cero."
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={s2fProjectionData}>
-                <defs>
-                  <linearGradient id="projArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--text-muted)" stopOpacity={0.06} />
-                    <stop offset="100%" stopColor="var(--text-muted)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <ComposedChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  ticks={["2009", "2015", "2020", "2025", "2030", "2035", "2040", "2045", "2050"]}
-                />
+                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={xTicks} axisLine={false} tickLine={false} />
                 <YAxis
                   stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  scale={logScale ? "log" : "auto"} domain={logScale ? ["auto", "auto"] : [0, "auto"]}
-                  allowDataOverflow={logScale}
+                  tickFormatter={(v: number) => `${v}%`}
                 />
                 <Tooltip
                   content={({ active, payload, label }: any) => {
                     if (!active || !payload) return null;
-                    const point = s2fProjectionData.find(d => d.date === label);
                     return (
                       <div
                         className="rounded-lg px-4 py-3 text-xs"
-                        style={{
-                          background: "var(--bg-tooltip)",
-                          border: "1px solid var(--border)",
-                          backdropFilter: "blur(10px)",
-                        }}
+                        style={{ background: "var(--bg-tooltip)", border: "1px solid var(--border)", backdropFilter: "blur(10px)" }}
                       >
-                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>
-                          {label}{point?.projected ? " (proyecci\u00f3n)" : ""}
-                        </p>
+                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
                         {payload.map((entry: any, i: number) => (
                           <div key={i} className="flex items-center gap-2 py-0.5">
                             <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
                             <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
                             <span className="font-medium tabular-nums" style={{ color: entry.color }}>
-                              {typeof entry.value === "number" ? (entry.value >= 1000 ? `${(entry.value / 1000).toFixed(1)}K` : entry.value.toFixed(1)) : entry.value}
+                              {entry.value.toFixed(2)}%
                             </span>
                           </div>
                         ))}
@@ -395,26 +379,21 @@ export default function Dashboard() {
                     );
                   }}
                 />
-                <ReferenceLine x="2025" stroke="var(--text-muted)" strokeDasharray="4 4" strokeOpacity={0.5} />
-                <Line type="monotone" dataKey="gold_stock_to_flow" name="Oro S2F" stroke={COLORS.amber} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="btc_stock_to_flow" name="BTC S2F" stroke={COLORS.orange} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="dilution_yoy_gold" name="Oro" stroke={COLORS.amber} strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="dilution_yoy_equities" name="Acciones" stroke={COLORS.purple} strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="dilution_yoy_realestate" name="Inmuebles" stroke={COLORS.red} strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="dilution_yoy_bonds" name="Bonos" stroke={COLORS.cyan} strokeWidth={1.5} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-4 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.amber }} />
-              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>Oro S2F</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.orange }} />
-              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>Bitcoin S2F</span>
-            </div>
-            <div className="flex items-center gap-2 ml-auto">
-              <div className="w-4 h-0" style={{ borderTop: "2px dashed var(--text-muted)" }} />
-              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>2025+ = proyecci&oacute;n</span>
-            </div>
-          </div>
+          <ChartLegend
+            items={[
+              { color: COLORS.amber, label: "Oro (~1.5%)" },
+              { color: COLORS.purple, label: "Acciones (~3-5%)" },
+              { color: COLORS.red, label: "Inmuebles (~2%)" },
+              { color: COLORS.cyan, label: "Bonos (~5-8%)" },
+            ]}
+          />
         </ChartSection>
       </div>
 
@@ -525,8 +504,84 @@ export default function Dashboard() {
         </ChartSection>
       </div>
 
-      {/* Market Cap — Riqueza nominal */}
-      <div className="mt-4 sm:mt-6">
+      {/* ACT 4 — LA MÉTRICA: Stock-to-Flow + Market Cap */}
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-5 mt-4 sm:mt-6">
+        {/* Stock-to-Flow */}
+        <ChartSection
+          title="Stock-to-Flow &mdash; Midiendo la escasez"
+          subtitle={`Cu\u00e1ntos a\u00f1os de producci\u00f3n actual representan el stock existente. Mayor S2F = m\u00e1s escaso. Oro: ~62. Bitcoin: creciente despu\u00e9s de cada halving. Acciones: ~20. Bonos: ~12. Proyecci\u00f3n hasta 2050.`}
+          delay={5}
+        >
+          <div className="h-[220px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={s2fProjectionData}>
+                <defs>
+                  <linearGradient id="projArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--text-muted)" stopOpacity={0.06} />
+                    <stop offset="100%" stopColor="var(--text-muted)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
+                  ticks={["2009", "2015", "2020", "2025", "2030", "2035", "2040", "2045", "2050"]}
+                />
+                <YAxis
+                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
+                  scale={logScale ? "log" : "auto"} domain={logScale ? ["auto", "auto"] : [0, "auto"]}
+                  allowDataOverflow={logScale}
+                />
+                <Tooltip
+                  content={({ active, payload, label }: any) => {
+                    if (!active || !payload) return null;
+                    const point = s2fProjectionData.find(d => d.date === label);
+                    return (
+                      <div
+                        className="rounded-lg px-4 py-3 text-xs"
+                        style={{
+                          background: "var(--bg-tooltip)",
+                          border: "1px solid var(--border)",
+                          backdropFilter: "blur(10px)",
+                        }}
+                      >
+                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>
+                          {label}{point?.projected ? " (proyecci\u00f3n)" : ""}
+                        </p>
+                        {payload.map((entry: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 py-0.5">
+                            <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+                            <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
+                            <span className="font-medium tabular-nums" style={{ color: entry.color }}>
+                              {typeof entry.value === "number" ? (entry.value >= 1000 ? `${(entry.value / 1000).toFixed(1)}K` : entry.value.toFixed(1)) : entry.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
+                <ReferenceLine x="2025" stroke="var(--text-muted)" strokeDasharray="4 4" strokeOpacity={0.5} />
+                <Line type="monotone" dataKey="gold_stock_to_flow" name="Oro S2F" stroke={COLORS.amber} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="btc_stock_to_flow" name="BTC S2F" stroke={COLORS.orange} strokeWidth={2} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 mt-4 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.amber }} />
+              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>Oro S2F</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.orange }} />
+              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>Bitcoin S2F</span>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <div className="w-4 h-0" style={{ borderTop: "2px dashed var(--text-muted)" }} />
+              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>2025+ = proyecci&oacute;n</span>
+            </div>
+          </div>
+        </ChartSection>
+
+        {/* Market Cap — Riqueza nominal */}
         <ChartSection
           title="El espejismo del crecimiento"
           subtitle="Capitalizaci&oacute;n total por clase de activo en USD nominales. &iquest;Cu&aacute;nto es riqueza real y cu&aacute;nto es el denominador (el d&oacute;lar) achic&aacute;ndose?"
@@ -618,62 +673,6 @@ export default function Dashboard() {
               { color: COLORS.purple, label: "Acciones" },
               { color: COLORS.amber, label: "Oro" },
               { color: COLORS.orange, label: "Bitcoin" },
-            ]}
-          />
-        </ChartSection>
-      </div>
-
-      {/* ACT 3 cont. — Dilución anual */}
-      <div className="mt-4 sm:mt-6">
-        <ChartSection
-          title="La velocidad de la diluci&oacute;n"
-          subtitle="Crecimiento anual (%) de la oferta de cada activo. El oro crece ~1.5% al a&ntilde;o. Los bonos y acciones, entre 3% y 8%. Bitcoin se acerca a cero."
-          delay={5}
-        >
-          <div className="h-[220px] sm:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={filteredData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={xTicks} axisLine={false} tickLine={false} />
-                <YAxis
-                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  tickFormatter={(v: number) => `${v}%`}
-                />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload) return null;
-                    return (
-                      <div
-                        className="rounded-lg px-4 py-3 text-xs"
-                        style={{ background: "var(--bg-tooltip)", border: "1px solid var(--border)", backdropFilter: "blur(10px)" }}
-                      >
-                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
-                        {payload.map((entry: any, i: number) => (
-                          <div key={i} className="flex items-center gap-2 py-0.5">
-                            <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
-                            <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
-                            <span className="font-medium tabular-nums" style={{ color: entry.color }}>
-                              {entry.value.toFixed(2)}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
-                <Line type="monotone" dataKey="dilution_yoy_gold" name="Oro" stroke={COLORS.amber} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="dilution_yoy_equities" name="Acciones" stroke={COLORS.purple} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="dilution_yoy_realestate" name="Inmuebles" stroke={COLORS.red} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="dilution_yoy_bonds" name="Bonos" stroke={COLORS.cyan} strokeWidth={1.5} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <ChartLegend
-            items={[
-              { color: COLORS.amber, label: "Oro (~1.5%)" },
-              { color: COLORS.purple, label: "Acciones (~3-5%)" },
-              { color: COLORS.red, label: "Inmuebles (~2%)" },
-              { color: COLORS.cyan, label: "Bonos (~5-8%)" },
             ]}
           />
         </ChartSection>

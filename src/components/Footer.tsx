@@ -42,7 +42,7 @@ export default function Footer() {
             className="text-[11px] tracking-wider"
             style={{ color: "var(--text-muted)" }}
           >
-            Cada precio es una fracci&oacute;n. Esto trackea el de arriba.
+            Todo precio es una fracci&oacute;n. Esto trackea el numerador.
           </span>
         </div>
 
