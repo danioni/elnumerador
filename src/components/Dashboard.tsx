@@ -709,6 +709,66 @@ export default function Dashboard() {
           <div className="divider-gradient mt-6 sm:mt-8" />
         </div>
 
+        {/* Supuestos y definiciones */}
+        <div className="mt-10 sm:mt-16 fade-in-up">
+          <div className="divider-gradient mb-8" />
+          <h3
+            className="font-serif text-lg tracking-wide mb-6"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Supuestos y definiciones
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            <div>
+              <p className="uppercase tracking-widest mb-2" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
+                &iquest;Qu&eacute; es una &ldquo;unidad&rdquo; de cada activo?
+              </p>
+              <ul className="space-y-2">
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Oro:</span> Toneladas m&eacute;tricas de oro sobre tierra (above-ground stock). Incluye joyer&iacute;a, reservas de bancos centrales, inversi&oacute;n y uso industrial. No incluye reservas bajo tierra sin minar.
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Acciones:</span> Total de acciones en circulaci&oacute;n (shares outstanding) a nivel global, en miles de millones. Incluye todas las bolsas reportadas por la World Federation of Exchanges.
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Inmuebles:</span> Unidades de vivienda globales, en millones. Incluye vivienda residencial (casas, departamentos, unidades habitacionales). No incluye inmuebles comerciales ni terrenos sin construir.
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Bonos:</span> Deuda global outstanding en billones (trillones anglosajones) de USD. Incluye deuda soberana, corporativa y supranacional.
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Bitcoin:</span> BTC en circulaci&oacute;n seg&uacute;n la blockchain. M&aacute;ximo te&oacute;rico: 21.000.000 BTC.
+                </li>
+              </ul>
+            </div>
+            <div>
+              <p className="uppercase tracking-widest mb-2" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
+                Supuestos del modelo
+              </p>
+              <ul className="space-y-2">
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Base del &iacute;ndice:</span> Todos los &iacute;ndices de oferta y precio usan base 100&nbsp;=&nbsp;1913, excepto Bitcoin que usa base 100&nbsp;=&nbsp;2009 (a&ntilde;o de g&eacute;nesis).
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Interpolaci&oacute;n:</span> Entre puntos ancla verificados se usa interpolaci&oacute;n exponencial (asume crecimiento compuesto constante entre a&ntilde;os con datos).
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Precios:</span> Oro en USD/oz troy. Acciones medidas por el S&amp;P 500 (cierre de a&ntilde;o). Inmuebles por precio mediano de venta en EE.UU. (FRED MSPUS). Bitcoin en USD (cierre de a&ntilde;o).
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Stock-to-Flow:</span> Calculado como stock existente / producci&oacute;n anual. Para Bitcoin, la emisi&oacute;n anual se calcula con las fechas reales de halving (2012, 2016, 2020, 2024) y 144 bloques/d&iacute;a.
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Elasticidad:</span> Mide cu&aacute;nto responde la oferta a cambios en el precio. Se calcula como %&Delta;oferta&nbsp;/&nbsp;%&Delta;precio en ventana m&oacute;vil de 10 a&ntilde;os. Un valor cercano a 0 indica oferta in&eacute;lastica (ej. oro); mayor que 0 indica que la oferta reacciona al precio.
+                </li>
+                <li>
+                  <span style={{ color: "var(--text-secondary)" }}>Market cap:</span> Capitalizaci&oacute;n en USD nominales (no ajustados por inflaci&oacute;n). El &iacute;ndice numerador se pondera din&aacute;micamente por el peso de cada clase de activo en el market cap total.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {/* Sources */}
         <div className="mt-10 sm:mt-16 fade-in-up">
           <div className="divider-gradient mb-8" />
