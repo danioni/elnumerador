@@ -275,8 +275,8 @@ export default function Dashboard() {
 
       {/* 1. Numerator Index — Hero Chart */}
       <ChartSection
-        title={"\u00cdndice Numerador \u2014 Cu\u00e1nto se diluy\u00f3 la oferta de activos"}
-        subtitle="Compuesto ponderado por market cap de la oferta de cada clase de activo. Base 100 = 1913. M\u00e1s alto = m\u00e1s unidades de activos existen."
+        title="Índice Numerador — Cuánto se diluyó la oferta de activos"
+        subtitle="Compuesto ponderado por market cap de la oferta de cada clase de activo. Base 100 = 1913. Más alto = más unidades de activos existen."
         delay={3}
       >
         <div className="h-[250px] sm:h-[320px]">
@@ -297,7 +297,7 @@ export default function Dashboard() {
                 tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`}
               />
               <Tooltip content={<IndexTooltip />} />
-              <Area type="monotone" dataKey="numerator_index" name="\u00cdndice" stroke={COLORS.blue} fill="url(#gradNum)" strokeWidth={2} />
+              <Area type="monotone" dataKey="numerator_index" name="Índice" stroke={COLORS.blue} fill="url(#gradNum)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -307,8 +307,8 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-2 gap-4 sm:gap-5 mt-4 sm:mt-6">
         {/* Supply Indexed — All assets */}
         <ChartSection
-          title="Supply Indexado \u2014 \u00bfQu\u00e9 se diluye m\u00e1s r\u00e1pido?"
-          subtitle="Oferta de cada activo indexada a base 100 en 1913. Los bonos son los que m\u00e1s crecen; el oro, el que menos."
+          title="Supply Indexado — ¿Qué se diluye más rápido?"
+          subtitle="Oferta de cada activo indexada a base 100 en 1913. Los bonos son los que más crecen; el oro, el que menos."
           delay={4}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -348,8 +348,8 @@ export default function Dashboard() {
 
         {/* Stock-to-Flow: Gold vs Bitcoin */}
         <ChartSection
-          title="Stock-to-Flow \u2014 La escasez programada"
-          subtitle="Ratio stock / producci\u00f3n anual. Mayor S2F = m\u00e1s escaso. El oro mantiene ~60x; Bitcoin supera al oro post-halving."
+          title="Stock-to-Flow — La escasez programada"
+          subtitle="Ratio stock / producción anual. Mayor S2F = más escaso. El oro mantiene ~60x; Bitcoin supera al oro post-halving."
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -380,8 +380,8 @@ export default function Dashboard() {
       {/* 3. Price vs Supply — Each asset */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Precio vs Supply \u2014 \u00bfD\u00f3nde est\u00e1 la diferencia?"
-          subtitle="Precio indexado (l\u00ednea s\u00f3lida) vs supply indexado (l\u00ednea punteada) para cada activo. Base 100 = 1913. La brecha entre precio y supply es lo que explica el denominador."
+          title="Precio vs Supply — ¿Dónde está la diferencia?"
+          subtitle="Precio indexado (línea sólida) vs supply indexado (línea punteada) para cada activo. Base 100 = 1913. La brecha entre precio y supply es lo que explica el denominador."
           delay={5}
         >
           <div className="h-[250px] sm:h-[320px]">
@@ -452,8 +452,8 @@ export default function Dashboard() {
       {/* 4. Market Cap — Absolute Wealth */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Riqueza Global \u2014 M\u00e1s activos, m\u00e1s unidades, m\u00e1s denominador"
-          subtitle="Capitalizaci\u00f3n total por clase de activo en USD nominales. El crecimiento refleja tanto creaci\u00f3n de riqueza real como diluci\u00f3n monetaria."
+          title="Riqueza Global — Más activos, más unidades, más denominador"
+          subtitle="Capitalización total por clase de activo en USD nominales. El crecimiento refleja tanto creación de riqueza real como dilución monetaria."
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -550,8 +550,8 @@ export default function Dashboard() {
       {/* 5. Annual Dilution Rate */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Diluci\u00f3n Anual \u2014 Cu\u00e1nto crece la oferta cada a\u00f1o"
-          subtitle="Crecimiento anual (%) del supply de cada activo. Oro ~1.5%/a\u00f1o, Bitcoin decreciente post-halving, bonos y acciones crecen m\u00e1s r\u00e1pido."
+          title="Dilución Anual — Cuánto crece la oferta cada año"
+          subtitle="Crecimiento anual (%) del supply de cada activo. Oro ~1.5%/año, Bitcoin decreciente post-halving, bonos y acciones crecen más rápido."
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -606,8 +606,8 @@ export default function Dashboard() {
       {/* 6. Bitcoin Supply */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Bitcoin Supply \u2014 Escasez verificable"
-          subtitle="Supply en circulaci\u00f3n vs m\u00e1ximo de 21M. Cada halving reduce la emisi\u00f3n a la mitad. Ya se min\u00f3 el 94.4% del supply total."
+          title="Bitcoin Supply — Escasez verificable"
+          subtitle="Supply en circulación vs máximo de 21M. Cada halving reduce la emisión a la mitad. Ya se minó el 94.4% del supply total."
           delay={5}
         >
           <div className="h-[220px] sm:h-[280px]">

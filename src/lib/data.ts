@@ -396,7 +396,7 @@ export function getLatestMetrics() {
     numeratorIndex: {
       value: latest.numerator_index,
       change: cagr(first.numerator_index, latest.numerator_index, years),
-      label: "\u00cdndice Numerador",
+      label: "Índice Numerador",
       unit: "",
     },
     totalMcap: {
