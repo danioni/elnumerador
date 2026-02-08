@@ -34,6 +34,7 @@ export interface AssetDataPoint {
   bonds_us10y_yield: number;        // US 10Y yield (%)
   bonds_mcap: number;               // Global bond market (trillions USD)
   bonds_supply_index: number;       // Outstanding indexed base 100 = 1913
+  bonds_price_index: number;        // 1/yield indexed base 100 = 1913 (yield down = price up)
 
   // BITCOIN — Supply & Price
   btc_supply: number;               // BTC in circulation
@@ -48,6 +49,7 @@ export interface AssetDataPoint {
   elasticity_gold: number;
   elasticity_equities: number;
   elasticity_realestate: number;
+  elasticity_bonds: number;
 
   // AGGREGATE
   numerator_index: number;          // Composite supply index
@@ -257,6 +259,7 @@ function generateData(): AssetDataPoint[] {
   const baseUnits = base.realestate_units_million;
   const baseMedian = base.realestate_median_usd;
   const baseBonds = base.bonds_outstanding;
+  const baseYield = base.bonds_yield; // 4.0% in 1913
 
   // BTC base: first year with supply (2009)
   const btcBaseYear = historicalAnchors.find(a => a.btc_supply > 0);
@@ -285,6 +288,7 @@ function generateData(): AssetDataPoint[] {
     const realestateSupplyIdx = (snap.realestate_units_million / baseUnits) * 100;
     const realestatePriceIdx = (snap.realestate_median_usd / baseMedian) * 100;
     const bondsSupplyIdx = (snap.bonds_outstanding / baseBonds) * 100;
+    const bondsPriceIdx = snap.bonds_yield > 0 ? (baseYield / snap.bonds_yield) * 100 : 100;
 
     // BTC indices (base 100 = 2009, 0 before)
     const btcSupplyIdx = snap.btc_supply > 0 ? (snap.btc_supply / baseBTCSupply) * 100 : 0;
@@ -359,6 +363,7 @@ function generateData(): AssetDataPoint[] {
       bonds_us10y_yield: +snap.bonds_yield.toFixed(1),
       bonds_mcap: +snap.bonds_mcap.toFixed(2),
       bonds_supply_index: +bondsSupplyIdx.toFixed(1),
+      bonds_price_index: +bondsPriceIdx.toFixed(1),
 
       btc_supply: +snap.btc_supply.toFixed(0),
       btc_max_supply: 21000000,
@@ -375,6 +380,7 @@ function generateData(): AssetDataPoint[] {
       elasticity_gold: 0,
       elasticity_equities: 0,
       elasticity_realestate: 0,
+      elasticity_bonds: 0,
       dilution_yoy_gold: 0,
       dilution_yoy_equities: 0,
       dilution_yoy_realestate: 0,
@@ -412,6 +418,7 @@ function generateData(): AssetDataPoint[] {
     curr.elasticity_gold = elasticity(curr.gold_supply_index, past.gold_supply_index, curr.gold_price_index, past.gold_price_index);
     curr.elasticity_equities = elasticity(curr.equities_supply_index, past.equities_supply_index, curr.equities_price_index, past.equities_price_index);
     curr.elasticity_realestate = elasticity(curr.realestate_supply_index, past.realestate_supply_index, curr.realestate_price_index, past.realestate_price_index);
+    curr.elasticity_bonds = elasticity(curr.bonds_supply_index, past.bonds_supply_index, curr.bonds_price_index, past.bonds_price_index);
   }
 
   return data;

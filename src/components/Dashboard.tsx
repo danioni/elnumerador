@@ -488,6 +488,12 @@ export default function Dashboard() {
                                 <span style={{ color: "var(--text-muted)" }}>Inmuebles</span>
                               </div>
                             )}
+                            {point.elasticity_bonds !== undefined && point.elasticity_bonds !== 0 && (
+                              <div className="flex items-center gap-2 py-0.5">
+                                <span style={{ color: COLORS.cyan }}>{point.elasticity_bonds.toFixed(2)}</span>
+                                <span style={{ color: "var(--text-muted)" }}>Bonos</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -503,6 +509,9 @@ export default function Dashboard() {
                 {/* Inmuebles — oferta s\u00f3lida, precio punteado */}
                 <Line type="monotone" dataKey="realestate_supply_index" name="Inmuebles Oferta" stroke={COLORS.red} strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="realestate_price_index" name="Inmuebles Precio" stroke={COLORS.red} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                {/* Bonos — oferta s\u00f3lida, precio (1/yield) punteado */}
+                <Line type="monotone" dataKey="bonds_supply_index" name="Bonos Oferta" stroke={COLORS.cyan} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="bonds_price_index" name="Bonos Precio" stroke={COLORS.cyan} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -514,6 +523,8 @@ export default function Dashboard() {
               { color: COLORS.purple, label: "S&P 500 Precio", dashed: true },
               { color: COLORS.red, label: "Inmuebles Oferta" },
               { color: COLORS.red, label: "Inmuebles Precio", dashed: true },
+              { color: COLORS.cyan, label: "Bonos Oferta" },
+              { color: COLORS.cyan, label: "Bonos Precio (1/yield)", dashed: true },
             ]}
           />
         </ChartSection>
@@ -799,7 +810,7 @@ export default function Dashboard() {
                   <span style={{ color: "var(--text-secondary)" }}>Interpolaci&oacute;n:</span> Entre puntos ancla verificados se usa interpolaci&oacute;n exponencial (asume crecimiento compuesto constante entre a&ntilde;os con datos).
                 </li>
                 <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Precios:</span> Oro en USD/oz troy. Acciones medidas por el S&amp;P 500 (cierre de a&ntilde;o). Inmuebles por precio mediano de venta en EE.UU. (FRED MSPUS). Bitcoin en USD (cierre de a&ntilde;o).
+                  <span style={{ color: "var(--text-secondary)" }}>Precios:</span> Oro en USD/oz troy. Acciones medidas por el S&amp;P 500 (cierre de a&ntilde;o). Inmuebles por precio mediano de venta en EE.UU. (FRED MSPUS). Bonos: inversa del yield del bono a 10 a&ntilde;os de EE.UU. (1/yield) &mdash; cuando el yield baja, el precio del bono sube. Bitcoin en USD (cierre de a&ntilde;o).
                 </li>
                 <li>
                   <span style={{ color: "var(--text-secondary)" }}>Stock-to-Flow:</span> Calculado como stock existente / producci&oacute;n anual. Para Bitcoin, la emisi&oacute;n anual se calcula con las fechas reales de halving (2012, 2016, 2020, 2024) y 144 bloques/d&iacute;a.
