@@ -44,6 +44,11 @@ export interface AssetDataPoint {
   btc_stock_to_flow: number;        // Stock / Annual issuance
   btc_supply_index: number;         // Supply indexed base 100 = 2009
 
+  // ELASTICITY — supply response to price (%supply change / %price change, 10Y rolling)
+  elasticity_gold: number;
+  elasticity_equities: number;
+  elasticity_realestate: number;
+
   // AGGREGATE
   numerator_index: number;          // Composite supply index
   total_mcap: number;               // Total market cap all assets
@@ -91,7 +96,7 @@ const historicalAnchors: AssetSnapshot[] = [
     btc_supply: 0, btc_price: 0, btc_mcap: 0 },
 
   // 1929: Roaring 20s peak
-  { year: 1929, gold_stock_tonnes: 42000, gold_production: 600, gold_price: 20.63, gold_mcap: 0.04,
+  { year: 1929, gold_stock_tonnes: 42000, gold_production: 600, gold_price: 20.67, gold_mcap: 0.04,
     equities_shares_billion: 12, equities_companies: 4000, equities_mcap: 0.09, sp500: 21.45,
     realestate_units_million: 330, realestate_median_usd: 5500, realestate_mcap: 2.5,
     bonds_outstanding: 0.12, bonds_yield: 3.5, bonds_mcap: 0.12,
@@ -142,7 +147,7 @@ const historicalAnchors: AssetSnapshot[] = [
   // 2009: GFC + Bitcoin genesis
   { year: 2009, gold_stock_tonnes: 165000, gold_production: 2600, gold_price: 1096, gold_mcap: 5.77,
     equities_shares_billion: 200, equities_companies: 42000, equities_mcap: 35.00, sp500: 1115.10,
-    realestate_units_million: 1350, realestate_median_usd: 172500, realestate_mcap: 115.0,
+    realestate_units_million: 1350, realestate_median_usd: 208400, realestate_mcap: 115.0,
     bonds_outstanding: 75.00, bonds_yield: 3.3, bonds_mcap: 75.00,
     btc_supply: 1623400, btc_price: 0.001, btc_mcap: 0 },
 
@@ -198,7 +203,7 @@ const historicalAnchors: AssetSnapshot[] = [
   // 2024: BTC ETF, gradual easing
   { year: 2024, gold_stock_tonnes: 212000, gold_production: 3700, gold_price: 2625, gold_mcap: 16.12,
     equities_shares_billion: 318, equities_companies: 43000, equities_mcap: 128.00, sp500: 5881.63,
-    realestate_units_million: 1860, realestate_median_usd: 412300, realestate_mcap: 393.0,
+    realestate_units_million: 1860, realestate_median_usd: 420400, realestate_mcap: 393.0,
     bonds_outstanding: 145.00, bonds_yield: 4.2, bonds_mcap: 145.00,
     btc_supply: 19790000, btc_price: 93000, btc_mcap: 1.85 },
 
@@ -286,12 +291,25 @@ function generateData(): AssetDataPoint[] {
     // Stock-to-flow
     const goldS2F = snap.gold_production > 0 ? snap.gold_stock_tonnes / snap.gold_production : 0;
 
-    // BTC annual issuance estimate (simplified: ~328,500/year in early days, halving ~every 4 years)
+    // BTC annual issuance based on real halving dates
+    // Halving 1: Nov 2012, Halving 2: Jul 2016, Halving 3: May 2020, Halving 4: Apr 2024
     let btcAnnualIssuance = 0;
     let btcS2F = 0;
     if (snap.btc_supply > 0 && year >= 2009) {
-      const halvings = Math.floor((year - 2009) / 4);
-      btcAnnualIssuance = 328500 / Math.pow(2, Math.min(halvings, 6));
+      const halvingYears = [2012, 2016, 2020, 2024];
+      let halvings = 0;
+      for (const hy of halvingYears) {
+        if (year >= hy) halvings++;
+      }
+      // Initial block reward: 50 BTC * ~52,560 blocks/year ≈ 2,628,000 BTC/year
+      // But actual average is closer to ~657,000 BTC/year in first epoch (due to 10min blocks * 6/hr * 24 * 365 * 50 ≈ 2.6M, but 50*144*365 = 2,628,000)
+      // Using blocks per year: 144 blocks/day * 365 = 52,560 blocks/year
+      // Epoch 0: 50 BTC/block → 2,628,000 BTC/year
+      // Epoch 1: 25 BTC/block → 1,314,000 BTC/year
+      // Epoch 2: 12.5 BTC/block → 657,000 BTC/year
+      // Epoch 3: 6.25 BTC/block → 328,500 BTC/year
+      // Epoch 4: 3.125 BTC/block → 164,250 BTC/year
+      btcAnnualIssuance = 2628000 / Math.pow(2, Math.min(halvings, 6));
       btcS2F = btcAnnualIssuance > 0 ? snap.btc_supply / btcAnnualIssuance : 0;
     }
 
@@ -353,6 +371,9 @@ function generateData(): AssetDataPoint[] {
       total_mcap: +totalMcap.toFixed(2),
 
       // Placeholder — will be computed in second pass
+      elasticity_gold: 0,
+      elasticity_equities: 0,
+      elasticity_realestate: 0,
       dilution_yoy_gold: 0,
       dilution_yoy_equities: 0,
       dilution_yoy_realestate: 0,
@@ -373,6 +394,23 @@ function generateData(): AssetDataPoint[] {
     curr.dilution_yoy_realestate = yoy(curr.realestate_units_million, prev.realestate_units_million);
     curr.dilution_yoy_bonds = yoy(curr.bonds_outstanding, prev.bonds_outstanding);
     curr.dilution_yoy_btc = prev.btc_supply > 0 ? yoy(curr.btc_supply, prev.btc_supply) : 0;
+  }
+
+  // Third pass: compute 10-year rolling elasticity (% change supply / % change price)
+  const WINDOW = 10;
+  for (let i = WINDOW; i < data.length; i++) {
+    const past = data[i - WINDOW];
+    const curr = data[i];
+    const elasticity = (supplyNow: number, supplyPast: number, priceNow: number, pricePast: number) => {
+      if (pricePast <= 0 || supplyPast <= 0) return 0;
+      const pctSupply = (supplyNow / supplyPast - 1) * 100;
+      const pctPrice = (priceNow / pricePast - 1) * 100;
+      if (Math.abs(pctPrice) < 0.01) return 0;
+      return +(pctSupply / pctPrice).toFixed(3);
+    };
+    curr.elasticity_gold = elasticity(curr.gold_supply_index, past.gold_supply_index, curr.gold_price_index, past.gold_price_index);
+    curr.elasticity_equities = elasticity(curr.equities_supply_index, past.equities_supply_index, curr.equities_price_index, past.equities_price_index);
+    curr.elasticity_realestate = elasticity(curr.realestate_supply_index, past.realestate_supply_index, curr.realestate_price_index, past.realestate_price_index);
   }
 
   return data;

@@ -377,11 +377,11 @@ export default function Dashboard() {
         </ChartSection>
       </div>
 
-      {/* 3. Price vs Supply — Each asset */}
+      {/* 3. Oferta vs Precio — Elasticidad */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Precio vs Supply — ¿Dónde está la diferencia?"
-          subtitle="Precio indexado (línea sólida) vs supply indexado (línea punteada) para cada activo. Base 100 = 1913. La brecha entre precio y supply es lo que explica el denominador."
+          title={`\u00bfC\u00f3mo reacciona la oferta al precio?`}
+          subtitle={`Oferta indexada (l\u00ednea s\u00f3lida) vs precio indexado (l\u00ednea punteada) para cada activo. Base 100 = 1913. Cuando el precio sube, \u00bfcu\u00e1nto crece la oferta?`}
           delay={5}
         >
           <div className="h-[250px] sm:h-[320px]">
@@ -398,6 +398,7 @@ export default function Dashboard() {
                 <Tooltip
                   content={({ active, payload, label }: any) => {
                     if (!active || !payload) return null;
+                    const point = filteredData.find((d: any) => d.date === label);
                     return (
                       <div
                         className="rounded-lg px-4 py-3 text-xs"
@@ -420,30 +421,53 @@ export default function Dashboard() {
                             </span>
                           </div>
                         ))}
+                        {point && (
+                          <div className="mt-2 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
+                            <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>Elasticidad oferta-precio</p>
+                            {point.elasticity_gold !== undefined && point.elasticity_gold !== 0 && (
+                              <div className="flex items-center gap-2 py-0.5">
+                                <span style={{ color: COLORS.amber }}>{point.elasticity_gold.toFixed(2)}</span>
+                                <span style={{ color: "var(--text-muted)" }}>Oro</span>
+                              </div>
+                            )}
+                            {point.elasticity_equities !== undefined && point.elasticity_equities !== 0 && (
+                              <div className="flex items-center gap-2 py-0.5">
+                                <span style={{ color: COLORS.purple }}>{point.elasticity_equities.toFixed(2)}</span>
+                                <span style={{ color: "var(--text-muted)" }}>Acciones</span>
+                              </div>
+                            )}
+                            {point.elasticity_realestate !== undefined && point.elasticity_realestate !== 0 && (
+                              <div className="flex items-center gap-2 py-0.5">
+                                <span style={{ color: COLORS.red }}>{point.elasticity_realestate.toFixed(2)}</span>
+                                <span style={{ color: "var(--text-muted)" }}>Inmuebles</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   }}
                 />
-                {/* Gold */}
-                <Line type="monotone" dataKey="gold_price_index" name="Oro Precio" stroke={COLORS.amber} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="gold_supply_index" name="Oro Supply" stroke={COLORS.amber} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-                {/* S&P 500 */}
-                <Line type="monotone" dataKey="equities_price_index" name="S&P 500 Precio" stroke={COLORS.purple} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="equities_supply_index" name="Acciones Supply" stroke={COLORS.purple} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-                {/* Real Estate */}
-                <Line type="monotone" dataKey="realestate_price_index" name="Inmuebles Precio" stroke={COLORS.red} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="realestate_supply_index" name="Inmuebles Supply" stroke={COLORS.red} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                {/* Oro — oferta s\u00f3lida, precio punteado */}
+                <Line type="monotone" dataKey="gold_supply_index" name="Oro Oferta" stroke={COLORS.amber} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="gold_price_index" name="Oro Precio" stroke={COLORS.amber} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                {/* Acciones — oferta s\u00f3lida, precio punteado */}
+                <Line type="monotone" dataKey="equities_supply_index" name="Acciones Oferta" stroke={COLORS.purple} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="equities_price_index" name="S&P 500 Precio" stroke={COLORS.purple} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                {/* Inmuebles — oferta s\u00f3lida, precio punteado */}
+                <Line type="monotone" dataKey="realestate_supply_index" name="Inmuebles Oferta" stroke={COLORS.red} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="realestate_price_index" name="Inmuebles Precio" stroke={COLORS.red} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
           <ChartLegend
             items={[
-              { color: COLORS.amber, label: "Oro Precio" },
-              { color: COLORS.amber, label: "Oro Supply", dashed: true },
-              { color: COLORS.purple, label: "S&P 500 Precio" },
-              { color: COLORS.purple, label: "Acciones Supply", dashed: true },
-              { color: COLORS.red, label: "Inmuebles Precio" },
-              { color: COLORS.red, label: "Inmuebles Supply", dashed: true },
+              { color: COLORS.amber, label: "Oro Oferta" },
+              { color: COLORS.amber, label: "Oro Precio", dashed: true },
+              { color: COLORS.purple, label: "Acciones Oferta" },
+              { color: COLORS.purple, label: "S&P 500 Precio", dashed: true },
+              { color: COLORS.red, label: "Inmuebles Oferta" },
+              { color: COLORS.red, label: "Inmuebles Precio", dashed: true },
             ]}
           />
         </ChartSection>
