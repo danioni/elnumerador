@@ -186,7 +186,7 @@ function ScaleToggle({ isLog, onToggle }: { isLog: boolean; onToggle: () => void
 
 export default function Dashboard() {
   const [range, setRange] = useState<TimeRange>("ALL");
-  const [logScale, setLogScale] = useState(false);
+  const [logScale, setLogScale] = useState(true);
   const COLORS = useThemeColors();
   const metrics = useMemo(() => getLatestMetrics(), []);
 
@@ -217,28 +217,23 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
-      {/* Thesis banner */}
+      {/* ACT 1 — LA ILUSIÓN */}
       <div className="mb-8 sm:mb-12 fade-in-up pt-4">
         <p
           className="font-serif text-3xl sm:text-4xl md:text-5xl leading-[1.15] tracking-tight"
           style={{ color: "var(--text-primary)" }}
         >
-          Los activos tambi&eacute;n se diluyen.
-          <br />
-          <span className="glow-blue" style={{ color: "var(--accent-blue)" }}>
-            Unos m&aacute;s que otros.
-          </span>
+          &iquest;Y si nada subi&oacute;?
         </p>
         <p
-          className="mt-3 sm:mt-4 text-xs sm:text-sm max-w-2xl leading-relaxed"
+          className="mt-3 sm:mt-4 font-serif text-xl sm:text-2xl md:text-3xl leading-snug tracking-tight"
           style={{ color: "var(--text-secondary)" }}
         >
-          Todo precio es una fracci&oacute;n. El numerador es la cantidad de activos
-          &mdash; cu&aacute;ntas acciones, onzas de oro, casas, bonos y bitcoins existen.
-          Cuando la oferta de un activo crece r&aacute;pido, cada unidad vale menos.
-          Los activos que m&aacute;s resisten la diluci&oacute;n son los que mejor
-          preservan valor. La escasez no es opcional &mdash; es la &uacute;nica defensa
-          contra la expansi&oacute;n monetaria.
+          Todo precio es una fracci&oacute;n.
+          <br />
+          <span className="glow-blue" style={{ color: "var(--accent-blue)" }}>
+            El numerador tambi&eacute;n se mueve.
+          </span>
         </p>
         <div className="divider-gradient mt-6 sm:mt-8" />
       </div>
@@ -274,10 +269,10 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* 1. Numerator Index — Hero Chart */}
+      {/* ACT 2 — LA MÁQUINA: Numerator Index */}
       <ChartSection
-        title="Índice Numerador — Cuánto se diluyó la oferta de activos"
-        subtitle="Compuesto ponderado por market cap de la oferta de cada clase de activo. Base 100 = 1913. Más alto = más unidades de activos existen."
+        title="La m&aacute;quina de crear activos"
+        subtitle="&Iacute;ndice compuesto de la oferta global de activos (oro, acciones, inmuebles, bonos, bitcoin), ponderado por market cap. Base 100 = 1913. Cada punto hacia arriba significa: hay m&aacute;s unidades de todo."
         delay={3}
       >
         <div className="h-[250px] sm:h-[320px]">
@@ -308,8 +303,8 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-2 gap-4 sm:gap-5 mt-4 sm:mt-6">
         {/* Supply Indexed — All assets */}
         <ChartSection
-          title="Supply Indexado — ¿Qué se diluye más rápido?"
-          subtitle="Oferta de cada activo indexada a base 100 en 1913. Los bonos son los que más crecen; el oro, el que menos."
+          title="No todos se multiplican igual"
+          subtitle="Oferta de cada activo indexada a base 100 en 1913. Los bonos se multiplicaron miles de veces. El oro apenas se movi&oacute;."
           delay={4}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -347,10 +342,10 @@ export default function Dashboard() {
           />
         </ChartSection>
 
-        {/* Stock-to-Flow: Gold vs Bitcoin — con proyección a 2050 */}
+        {/* ACT 4 — LA MÉTRICA: Stock-to-Flow */}
         <ChartSection
-          title="Stock-to-Flow — La escasez programada"
-          subtitle={`Ratio stock / producci\u00f3n anual. Mayor S2F = m\u00e1s escaso. La oferta futura de Bitcoin es conocida: cada halving duplica la escasez. Proyecci\u00f3n hasta 2050.`}
+          title="Stock-to-Flow &mdash; Midiendo la escasez"
+          subtitle={`Cu\u00e1ntos a\u00f1os de producci\u00f3n actual representan el stock existente. Mayor S2F = m\u00e1s escaso. Oro: ~62. Bitcoin: creciente despu\u00e9s de cada halving. Acciones: ~20. Bonos: ~12. La escasez de Bitcoin es programada, verificable y creciente. Proyecci\u00f3n hasta 2050.`}
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -423,11 +418,11 @@ export default function Dashboard() {
         </ChartSection>
       </div>
 
-      {/* 3. Oferta vs Precio — Elasticidad */}
+      {/* ACT 3 — NO TODOS SON IGUALES: Elasticidad */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title={`\u00bfC\u00f3mo reacciona la oferta al precio?`}
-          subtitle={`Oferta indexada (l\u00ednea s\u00f3lida) vs precio indexado (l\u00ednea punteada) para cada activo. Base 100 = 1913. Cuando el precio sube, \u00bfcu\u00e1nto crece la oferta?`}
+          title="La prueba del precio &mdash; Qui&eacute;n resiste y qui&eacute;n se rinde"
+          subtitle={`Cuando sube el precio de un activo, \u00bfsu oferta crece? L\u00ednea s\u00f3lida = oferta, punteada = precio (base 100 = 1913). Si la oferta sigue al precio, no hay escasez \u2014 hay una f\u00e1brica que responde a la demanda.`}
           delay={5}
         >
           <div className="h-[250px] sm:h-[320px]">
@@ -530,11 +525,11 @@ export default function Dashboard() {
         </ChartSection>
       </div>
 
-      {/* 4. Market Cap — Absolute Wealth */}
+      {/* Market Cap — Riqueza nominal */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Riqueza Global — Más activos, más unidades, más denominador"
-          subtitle="Capitalización total por clase de activo en USD nominales. El crecimiento refleja tanto creación de riqueza real como dilución monetaria."
+          title="El espejismo del crecimiento"
+          subtitle="Capitalizaci&oacute;n total por clase de activo en USD nominales. &iquest;Cu&aacute;nto es riqueza real y cu&aacute;nto es el denominador (el d&oacute;lar) achic&aacute;ndose?"
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -628,11 +623,11 @@ export default function Dashboard() {
         </ChartSection>
       </div>
 
-      {/* 5. Annual Dilution Rate */}
+      {/* ACT 3 cont. — Dilución anual */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Dilución Anual — Cuánto crece la oferta cada año"
-          subtitle="Crecimiento anual (%) del supply de cada activo. Oro ~1.5%/año, Bitcoin decreciente post-halving, bonos y acciones crecen más rápido."
+          title="La velocidad de la diluci&oacute;n"
+          subtitle="Crecimiento anual (%) de la oferta de cada activo. El oro crece ~1.5% al a&ntilde;o. Los bonos y acciones, entre 3% y 8%. Bitcoin se acerca a cero."
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
@@ -684,11 +679,11 @@ export default function Dashboard() {
         </ChartSection>
       </div>
 
-      {/* 6. Bitcoin Supply */}
+      {/* ACT 5 — EL ANTÍDOTO: Bitcoin Supply */}
       <div className="mt-4 sm:mt-6">
         <ChartSection
-          title="Bitcoin Supply — Escasez verificable"
-          subtitle="Supply en circulación vs máximo de 21M. Cada halving reduce la emisión a la mitad. Ya se minó el 94.4% del supply total."
+          title="21 millones &mdash; El ant&iacute;doto"
+          subtitle="Supply en circulaci&oacute;n vs m&aacute;ximo absoluto de 21M. Cada halving reduce la emisi&oacute;n a la mitad. Ya se min&oacute; el 94.4%. No hay CEO que emita m&aacute;s, no hay banco central que lo decida, no hay congreso que lo vote."
           delay={5}
         >
           <div className="h-[220px] sm:h-[280px]">
@@ -751,16 +746,27 @@ export default function Dashboard() {
           </div>
         </ChartSection>
 
-        {/* Closing message */}
+        {/* Closing message — ACT 5 cierre */}
         <div className="mt-10 mb-10 sm:mt-16 sm:mb-16 fade-in-up text-center">
           <div className="divider-gradient mb-6 sm:mb-8" />
           <p
             className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight tracking-tight"
             style={{ color: "var(--text-primary)" }}
           >
-            La escasez no se imprime.{" "}
+            El dinero se diluye. Los activos tambi&eacute;n.
+          </p>
+          <p
+            className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight tracking-tight mt-2"
+            style={{ color: "var(--text-primary)" }}
+          >
+            La escasez no se imprime, no se legisla, no se negocia.
+          </p>
+          <p
+            className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight tracking-tight mt-2"
+            style={{ color: "var(--text-primary)" }}
+          >
             <span className="glow-blue" style={{ color: "var(--accent-blue)" }}>
-              Se defiende.
+              Se defiende con matem&aacute;ticas.
             </span>
           </p>
           <div className="divider-gradient mt-6 sm:mt-8" />
