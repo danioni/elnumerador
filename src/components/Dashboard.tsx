@@ -11,8 +11,9 @@ import {
   ResponsiveContainer,
   ComposedChart,
   Line,
+  ReferenceLine,
 } from "recharts";
-import { assetData, getLatestMetrics } from "@/lib/data";
+import { assetData, getLatestMetrics, s2fProjectionData } from "@/lib/data";
 import MetricCard from "./MetricCard";
 import ChartSection from "./ChartSection";
 
@@ -346,34 +347,79 @@ export default function Dashboard() {
           />
         </ChartSection>
 
-        {/* Stock-to-Flow: Gold vs Bitcoin */}
+        {/* Stock-to-Flow: Gold vs Bitcoin — con proyección a 2050 */}
         <ChartSection
           title="Stock-to-Flow — La escasez programada"
-          subtitle="Ratio stock / producción anual. Mayor S2F = más escaso. El oro mantiene ~60x; Bitcoin supera al oro post-halving."
+          subtitle={`Ratio stock / producci\u00f3n anual. Mayor S2F = m\u00e1s escaso. La oferta futura de Bitcoin es conocida: cada halving duplica la escasez. Proyecci\u00f3n hasta 2050.`}
           delay={5}
         >
           <div className="h-[220px] sm:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={filteredData.filter(d => parseInt(d.date) >= 2009)}>
+              <ComposedChart data={s2fProjectionData}>
+                <defs>
+                  <linearGradient id="projArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--text-muted)" stopOpacity={0.06} />
+                    <stop offset="100%" stopColor="var(--text-muted)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
+                  ticks={["2009", "2015", "2020", "2025", "2030", "2035", "2040", "2045", "2050"]}
+                />
                 <YAxis
                   stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
                   scale={logScale ? "log" : "auto"} domain={logScale ? ["auto", "auto"] : [0, "auto"]}
                   allowDataOverflow={logScale}
                 />
-                <Tooltip content={<IndexTooltip />} />
+                <Tooltip
+                  content={({ active, payload, label }: any) => {
+                    if (!active || !payload) return null;
+                    const point = s2fProjectionData.find(d => d.date === label);
+                    return (
+                      <div
+                        className="rounded-lg px-4 py-3 text-xs"
+                        style={{
+                          background: "var(--bg-tooltip)",
+                          border: "1px solid var(--border)",
+                          backdropFilter: "blur(10px)",
+                        }}
+                      >
+                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>
+                          {label}{point?.projected ? " (proyecci\u00f3n)" : ""}
+                        </p>
+                        {payload.map((entry: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 py-0.5">
+                            <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+                            <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
+                            <span className="font-medium tabular-nums" style={{ color: entry.color }}>
+                              {typeof entry.value === "number" ? (entry.value >= 1000 ? `${(entry.value / 1000).toFixed(1)}K` : entry.value.toFixed(1)) : entry.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
+                <ReferenceLine x="2025" stroke="var(--text-muted)" strokeDasharray="4 4" strokeOpacity={0.5} />
                 <Line type="monotone" dataKey="gold_stock_to_flow" name="Oro S2F" stroke={COLORS.amber} strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="btc_stock_to_flow" name="BTC S2F" stroke={COLORS.orange} strokeWidth={2} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <ChartLegend
-            items={[
-              { color: COLORS.amber, label: "Oro S2F" },
-              { color: COLORS.orange, label: "Bitcoin S2F" },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-4 mt-4 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.amber }} />
+              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>Oro S2F</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.orange }} />
+              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>Bitcoin S2F</span>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <div className="w-4 h-0" style={{ borderTop: "2px dashed var(--text-muted)" }} />
+              <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>2025+ = proyecci&oacute;n</span>
+            </div>
+          </div>
         </ChartSection>
       </div>
 

@@ -213,6 +213,7 @@ const historicalAnchors: AssetSnapshot[] = [
     realestate_units_million: 1900, realestate_median_usd: 425000, realestate_mcap: 405.0,
     bonds_outstanding: 150.00, bonds_yield: 4.5, bonds_mcap: 150.00,
     btc_supply: 19830000, btc_price: 97000, btc_mcap: 1.75 },
+
 ];
 
 // Interpolate between anchor points
@@ -417,6 +418,64 @@ function generateData(): AssetDataPoint[] {
 }
 
 export const assetData = generateData();
+
+// S2F projection data (2009-2050) — BTC is deterministic, gold uses last known production rate
+export interface S2FProjectionPoint {
+  date: string;
+  gold_stock_to_flow: number;
+  btc_stock_to_flow: number;
+  projected?: boolean;
+}
+
+function generateS2FProjection(): S2FProjectionPoint[] {
+  // Start with historical data from assetData (2009-2025)
+  const historical: S2FProjectionPoint[] = assetData
+    .filter(d => parseInt(d.date) >= 2009)
+    .map(d => ({
+      date: d.date,
+      gold_stock_to_flow: d.gold_stock_to_flow,
+      btc_stock_to_flow: d.btc_stock_to_flow,
+    }));
+
+  // Project 2026-2050
+  // Gold: last known stock ~215,000t, production declining slowly from ~3,500t/yr
+  // (peak gold theory: production flattening/declining as easy deposits are exhausted)
+  // BTC: deterministic — halvings every ~4 years at known block heights
+  const halvingYears = [2012, 2016, 2020, 2024, 2028, 2032, 2036, 2040, 2044, 2048];
+  const BLOCKS_PER_YEAR = 52560; // 144 blocks/day * 365
+
+  let goldStock = 215000; // 2025 value
+  let goldProduction = 3500; // 2025 production, declining ~1%/yr
+  let btcSupply = 19830000; // 2025 value
+
+  for (let year = 2026; year <= 2050; year++) {
+    // Gold: production declining ~1% per year (peak gold estimates)
+    goldProduction = goldProduction * 0.99;
+    goldStock += goldProduction;
+    const goldS2F = goldStock / goldProduction;
+
+    // BTC: deterministic issuance
+    let halvings = 0;
+    for (const hy of halvingYears) {
+      if (year >= hy) halvings++;
+    }
+    const btcBlockReward = 50 / Math.pow(2, Math.min(halvings, 10));
+    const btcAnnualIssuance = btcBlockReward * BLOCKS_PER_YEAR;
+    btcSupply = Math.min(btcSupply + btcAnnualIssuance, 21000000);
+    const btcS2F = btcAnnualIssuance > 0 ? btcSupply / btcAnnualIssuance : Infinity;
+
+    historical.push({
+      date: `${year}`,
+      gold_stock_to_flow: +goldS2F.toFixed(1),
+      btc_stock_to_flow: +Math.min(btcS2F, 9999).toFixed(1),
+      projected: true,
+    });
+  }
+
+  return historical;
+}
+
+export const s2fProjectionData = generateS2FProjection();
 
 // CAGR: Compound Annual Growth Rate
 function cagr(initial: number, final: number, years: number): number {
