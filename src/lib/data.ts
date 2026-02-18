@@ -51,6 +51,19 @@ export interface AssetDataPoint {
   elasticity_realestate: number;
   elasticity_bonds: number;
 
+  // MONETARY BASE
+  m2_trillion: number;              // US M2 money supply (trillions USD)
+  sp500_m2_ratio: number;           // S&P 500 / M2 (trillions) — real purchasing power of equities
+  realestate_m2_ratio: number;      // Median home price / M2 (trillions) — real purchasing power of real estate
+  bonds_m2_ratio: number;           // Implicit bond price (1/yield) / M2 — real purchasing power of bonds
+  sp500_m2_index: number;           // S&P/M2 indexed base 100 = 1913
+  realestate_m2_index: number;      // Vivienda/M2 indexed base 100 = 1913
+  bonds_m2_index: number;           // Bono/M2 indexed base 100 = 1913
+  gold_m2_ratio: number;            // Gold price / M2 — real purchasing power of gold
+  gold_m2_index: number;            // Gold/M2 indexed base 100 = 1913
+  nasdaq_price: number;             // Nasdaq Composite level (0 before 1971)
+  nasdaq_m2_index: number;          // Nasdaq/M2 indexed base 100 = 1971
+
   // AGGREGATE
   numerator_index: number;          // Composite supply index
   total_mcap: number;               // Total market cap all assets
@@ -72,6 +85,7 @@ interface AssetSnapshot {
   equities_companies: number;
   equities_mcap: number;
   sp500: number;
+  nasdaq: number;  // Nasdaq Composite — 0 before 1971
   realestate_units_million: number;
   realestate_median_usd: number;
   realestate_mcap: number;
@@ -81,6 +95,7 @@ interface AssetSnapshot {
   btc_supply: number;
   btc_price: number;
   btc_mcap: number;
+  m2_trillion: number;  // US M2 money supply (trillions USD) — Fed data
 }
 
 // Historical anchor points
@@ -91,130 +106,131 @@ interface AssetSnapshot {
 // Bitcoin: exact blockchain data
 const historicalAnchors: AssetSnapshot[] = [
   // 1913: Pre-war baseline
+  // M2 source: FRED M2SL (Dec year-end), pre-1959 from Friedman & Schwartz / Historical Statistics US
   { year: 1913, gold_stock_tonnes: 35000, gold_production: 690, gold_price: 20.67, gold_mcap: 0.04,
-    equities_shares_billion: 5, equities_companies: 2000, equities_mcap: 0.001, sp500: 8.04,
+    equities_shares_billion: 5, equities_companies: 2000, equities_mcap: 0.001, sp500: 8.04, nasdaq: 0,
     realestate_units_million: 250, realestate_median_usd: 3200, realestate_mcap: 0.9,
     bonds_outstanding: 0.03, bonds_yield: 4.0, bonds_mcap: 0.03,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 0.01573 },
 
   // 1929: Roaring 20s peak
   { year: 1929, gold_stock_tonnes: 42000, gold_production: 600, gold_price: 20.67, gold_mcap: 0.04,
-    equities_shares_billion: 12, equities_companies: 4000, equities_mcap: 0.09, sp500: 21.45,
+    equities_shares_billion: 12, equities_companies: 4000, equities_mcap: 0.09, sp500: 21.45, nasdaq: 0,
     realestate_units_million: 330, realestate_median_usd: 5500, realestate_mcap: 2.5,
     bonds_outstanding: 0.12, bonds_yield: 3.5, bonds_mcap: 0.12,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 0.04660 },
 
   // 1945: Post-WWII, Bretton Woods
   { year: 1945, gold_stock_tonnes: 50000, gold_production: 800, gold_price: 34.71, gold_mcap: 0.08,
-    equities_shares_billion: 15, equities_companies: 5000, equities_mcap: 0.06, sp500: 17.36,
+    equities_shares_billion: 15, equities_companies: 5000, equities_mcap: 0.06, sp500: 17.36, nasdaq: 0,
     realestate_units_million: 420, realestate_median_usd: 5500, realestate_mcap: 2.5,
     bonds_outstanding: 0.30, bonds_yield: 2.4, bonds_mcap: 0.30,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 0.12663 },
 
-  // 1960: Post-war boom
+  // 1960: Post-war boom — FRED Dec 1960: $312.4B
   { year: 1960, gold_stock_tonnes: 60000, gold_production: 1050, gold_price: 35.27, gold_mcap: 0.09,
-    equities_shares_billion: 25, equities_companies: 8000, equities_mcap: 0.30, sp500: 58.11,
+    equities_shares_billion: 25, equities_companies: 8000, equities_mcap: 0.30, sp500: 58.11, nasdaq: 0,
     realestate_units_million: 550, realestate_median_usd: 11900, realestate_mcap: 6.0,
     bonds_outstanding: 0.60, bonds_yield: 4.1, bonds_mcap: 0.60,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 0.3124 },
 
-  // 1971: Nixon shock — gold freed
+  // 1971: Nixon shock — Nasdaq Composite launched (base ~100) — FRED Dec 1971
   { year: 1971, gold_stock_tonnes: 70000, gold_production: 1250, gold_price: 41.25, gold_mcap: 0.12,
-    equities_shares_billion: 35, equities_companies: 10000, equities_mcap: 0.70, sp500: 102.09,
+    equities_shares_billion: 35, equities_companies: 10000, equities_mcap: 0.70, sp500: 102.09, nasdaq: 114.12,
     realestate_units_million: 650, realestate_median_usd: 24800, realestate_mcap: 10.0,
     bonds_outstanding: 1.20, bonds_yield: 6.2, bonds_mcap: 1.20,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 0.7103 },
 
-  // 1980: Volcker, gold peak
+  // 1980: Volcker, gold peak — FRED Dec 1980
   { year: 1980, gold_stock_tonnes: 85000, gold_production: 1220, gold_price: 615, gold_mcap: 2.08,
-    equities_shares_billion: 50, equities_companies: 14000, equities_mcap: 2.50, sp500: 135.76,
+    equities_shares_billion: 50, equities_companies: 14000, equities_mcap: 2.50, sp500: 135.76, nasdaq: 202.34,
     realestate_units_million: 780, realestate_median_usd: 63700, realestate_mcap: 20.0,
     bonds_outstanding: 3.50, bonds_yield: 12.5, bonds_mcap: 3.50,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 1.5998 },
 
-  // 1990: Japan bubble, German reunification
+  // 1990: Japan bubble, German reunification — FRED Dec 1990
   { year: 1990, gold_stock_tonnes: 105000, gold_production: 2180, gold_price: 383, gold_mcap: 1.54,
-    equities_shares_billion: 80, equities_companies: 20000, equities_mcap: 9.40, sp500: 330.22,
+    equities_shares_billion: 80, equities_companies: 20000, equities_mcap: 9.40, sp500: 330.22, nasdaq: 373.84,
     realestate_units_million: 950, realestate_median_usd: 122900, realestate_mcap: 40.0,
     bonds_outstanding: 11.00, bonds_yield: 8.1, bonds_mcap: 11.00,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 3.2718 },
 
-  // 2000: Dot-com peak
+  // 2000: Dot-com peak — FRED Dec 2000
   { year: 2000, gold_stock_tonnes: 130000, gold_production: 2590, gold_price: 273, gold_mcap: 1.27,
-    equities_shares_billion: 150, equities_companies: 35000, equities_mcap: 31.00, sp500: 1320.28,
+    equities_shares_billion: 150, equities_companies: 35000, equities_mcap: 31.00, sp500: 1320.28, nasdaq: 2470.52,
     realestate_units_million: 1150, realestate_median_usd: 165300, realestate_mcap: 75.0,
     bonds_outstanding: 30.00, bonds_yield: 5.1, bonds_mcap: 30.00,
-    btc_supply: 0, btc_price: 0, btc_mcap: 0 },
+    btc_supply: 0, btc_price: 0, btc_mcap: 0, m2_trillion: 4.9276 },
 
-  // 2009: GFC + Bitcoin genesis
+  // 2009: GFC + Bitcoin genesis — FRED Dec 2009
   { year: 2009, gold_stock_tonnes: 165000, gold_production: 2600, gold_price: 1096, gold_mcap: 5.77,
-    equities_shares_billion: 200, equities_companies: 42000, equities_mcap: 35.00, sp500: 1115.10,
+    equities_shares_billion: 200, equities_companies: 42000, equities_mcap: 35.00, sp500: 1115.10, nasdaq: 2269.15,
     realestate_units_million: 1350, realestate_median_usd: 208400, realestate_mcap: 115.0,
     bonds_outstanding: 75.00, bonds_yield: 3.3, bonds_mcap: 75.00,
-    btc_supply: 1623400, btc_price: 0.001, btc_mcap: 0 },
+    btc_supply: 1623400, btc_price: 0.001, btc_mcap: 0, m2_trillion: 8.5122 },
 
-  // 2012: QE3, "whatever it takes"
+  // 2012: QE3, "whatever it takes" — FRED Dec 2012
   { year: 2012, gold_stock_tonnes: 175000, gold_production: 2860, gold_price: 1675, gold_mcap: 9.42,
-    equities_shares_billion: 220, equities_companies: 43500, equities_mcap: 55.00, sp500: 1426.19,
+    equities_shares_billion: 220, equities_companies: 43500, equities_mcap: 55.00, sp500: 1426.19, nasdaq: 3019.51,
     realestate_units_million: 1450, realestate_median_usd: 177200, realestate_mcap: 175.0,
     bonds_outstanding: 97.00, bonds_yield: 1.8, bonds_mcap: 97.00,
-    btc_supply: 10625050, btc_price: 13.5, btc_mcap: 0.0001 },
+    btc_supply: 10625050, btc_price: 13.5, btc_mcap: 0.0001, m2_trillion: 10.4741 },
 
-  // 2015: ECB QE, Fed normalization
+  // 2015: ECB QE, Fed normalization — FRED Dec 2015
   { year: 2015, gold_stock_tonnes: 185000, gold_production: 3100, gold_price: 1060, gold_mcap: 6.23,
-    equities_shares_billion: 240, equities_companies: 44000, equities_mcap: 65.00, sp500: 2043.94,
+    equities_shares_billion: 240, equities_companies: 44000, equities_mcap: 65.00, sp500: 2043.94, nasdaq: 5007.41,
     realestate_units_million: 1530, realestate_median_usd: 222400, realestate_mcap: 210.0,
     bonds_outstanding: 100.00, bonds_yield: 2.3, bonds_mcap: 100.00,
-    btc_supply: 15027800, btc_price: 430, btc_mcap: 0.007 },
+    btc_supply: 15027800, btc_price: 430, btc_mcap: 0.007, m2_trillion: 12.3682 },
 
-  // 2017: Synchronized growth, BTC boom
+  // 2017: Synchronized growth, BTC boom — FRED Dec 2017
   { year: 2017, gold_stock_tonnes: 190000, gold_production: 3300, gold_price: 1296, gold_mcap: 7.64,
-    equities_shares_billion: 260, equities_companies: 45000, equities_mcap: 85.00, sp500: 2673.61,
+    equities_shares_billion: 260, equities_companies: 45000, equities_mcap: 85.00, sp500: 2673.61, nasdaq: 6903.39,
     realestate_units_million: 1600, realestate_median_usd: 248800, realestate_mcap: 280.0,
     bonds_outstanding: 110.00, bonds_yield: 2.4, bonds_mcap: 110.00,
-    btc_supply: 16774575, btc_price: 14000, btc_mcap: 0.24 },
+    btc_supply: 16774575, btc_price: 14000, btc_mcap: 0.24, m2_trillion: 13.8735 },
 
-  // 2020: COVID QE explosion
+  // 2020: COVID QE explosion — FRED Dec 2020
   { year: 2020, gold_stock_tonnes: 200000, gold_production: 3200, gold_price: 1898, gold_mcap: 11.26,
-    equities_shares_billion: 290, equities_companies: 43000, equities_mcap: 93.00, sp500: 3756.07,
+    equities_shares_billion: 290, equities_companies: 43000, equities_mcap: 93.00, sp500: 3756.07, nasdaq: 12888.28,
     realestate_units_million: 1700, realestate_median_usd: 329000, realestate_mcap: 310.0,
     bonds_outstanding: 128.00, bonds_yield: 0.9, bonds_mcap: 128.00,
-    btc_supply: 18587000, btc_price: 29000, btc_mcap: 0.54 },
+    btc_supply: 18587000, btc_price: 29000, btc_mcap: 0.54, m2_trillion: 19.1330 },
 
-  // 2021: Peak stimulus, BTC ATH $69K
+  // 2021: Peak stimulus, BTC ATH $69K — FRED Dec 2021
   { year: 2021, gold_stock_tonnes: 203000, gold_production: 3560, gold_price: 1829, gold_mcap: 11.62,
-    equities_shares_billion: 300, equities_companies: 43500, equities_mcap: 121.00, sp500: 4766.18,
+    equities_shares_billion: 300, equities_companies: 43500, equities_mcap: 121.00, sp500: 4766.18, nasdaq: 15644.97,
     realestate_units_million: 1740, realestate_median_usd: 374900, realestate_mcap: 390.0,
     bonds_outstanding: 135.00, bonds_yield: 1.5, bonds_mcap: 135.00,
-    btc_supply: 18897000, btc_price: 47000, btc_mcap: 0.88 },
+    btc_supply: 18897000, btc_price: 47000, btc_mcap: 0.88, m2_trillion: 21.4709 },
 
-  // 2022: Tightening, crypto crash
+  // 2022: Tightening, crypto crash — FRED Dec 2022
   { year: 2022, gold_stock_tonnes: 205500, gold_production: 3612, gold_price: 1824, gold_mcap: 11.80,
-    equities_shares_billion: 305, equities_companies: 42000, equities_mcap: 101.00, sp500: 3839.50,
+    equities_shares_billion: 305, equities_companies: 42000, equities_mcap: 101.00, sp500: 3839.50, nasdaq: 10466.48,
     realestate_units_million: 1780, realestate_median_usd: 386300, realestate_mcap: 380.0,
     bonds_outstanding: 133.00, bonds_yield: 3.9, bonds_mcap: 133.00,
-    btc_supply: 19240000, btc_price: 16500, btc_mcap: 0.32 },
+    btc_supply: 19240000, btc_price: 16500, btc_mcap: 0.32, m2_trillion: 21.2190 },
 
-  // 2023: QT continues, RRP drawdown
+  // 2023: QT continues, RRP drawdown — FRED Dec 2023
   { year: 2023, gold_stock_tonnes: 208500, gold_production: 3644, gold_price: 2063, gold_mcap: 12.93,
-    equities_shares_billion: 310, equities_companies: 42500, equities_mcap: 112.00, sp500: 4769.83,
+    equities_shares_billion: 310, equities_companies: 42500, equities_mcap: 112.00, sp500: 4769.83, nasdaq: 15011.35,
     realestate_units_million: 1820, realestate_median_usd: 392100, realestate_mcap: 385.0,
     bonds_outstanding: 141.00, bonds_yield: 3.9, bonds_mcap: 141.00,
-    btc_supply: 19570000, btc_price: 42000, btc_mcap: 0.83 },
+    btc_supply: 19570000, btc_price: 42000, btc_mcap: 0.83, m2_trillion: 20.7014 },
 
-  // 2024: BTC ETF, gradual easing
+  // 2024: BTC ETF, gradual easing — FRED Dec 2024 — Nasdaq Dec 31: 19,310.79
   { year: 2024, gold_stock_tonnes: 212000, gold_production: 3700, gold_price: 2625, gold_mcap: 16.12,
-    equities_shares_billion: 318, equities_companies: 43000, equities_mcap: 128.00, sp500: 5881.63,
+    equities_shares_billion: 318, equities_companies: 43000, equities_mcap: 128.00, sp500: 5881.63, nasdaq: 19310.79,
     realestate_units_million: 1860, realestate_median_usd: 420400, realestate_mcap: 393.0,
     bonds_outstanding: 145.00, bonds_yield: 4.2, bonds_mcap: 145.00,
-    btc_supply: 19790000, btc_price: 93000, btc_mcap: 1.85 },
+    btc_supply: 19790000, btc_price: 93000, btc_mcap: 1.85, m2_trillion: 21.4245 },
 
-  // 2025: Re-expansion
+  // 2025: Re-expansion — FRED Jan 2025 — Nasdaq ~19,600 (Feb 2025)
   { year: 2025, gold_stock_tonnes: 215000, gold_production: 3500, gold_price: 2850, gold_mcap: 18.90,
-    equities_shares_billion: 325, equities_companies: 43500, equities_mcap: 148.00, sp500: 6040,
+    equities_shares_billion: 325, equities_companies: 43500, equities_mcap: 148.00, sp500: 6040, nasdaq: 19600,
     realestate_units_million: 1900, realestate_median_usd: 425000, realestate_mcap: 405.0,
     bonds_outstanding: 150.00, bonds_yield: 4.5, bonds_mcap: 150.00,
-    btc_supply: 19830000, btc_price: 97000, btc_mcap: 1.75 },
+    btc_supply: 19830000, btc_price: 97000, btc_mcap: 1.75, m2_trillion: 21.4925 },
 
 ];
 
@@ -236,6 +252,7 @@ function interpolate(a: AssetSnapshot, b: AssetSnapshot, year: number): AssetSna
     equities_companies: expInterp(a.equities_companies, b.equities_companies),
     equities_mcap: expInterp(Math.max(a.equities_mcap, 0.001), Math.max(b.equities_mcap, 0.001)),
     sp500: expInterp(a.sp500, b.sp500),
+    nasdaq: a.nasdaq === 0 && b.nasdaq === 0 ? 0 : (a.nasdaq === 0 ? (b.nasdaq * Math.max(0, (year - a.year) / (b.year - a.year))) : expInterp(a.nasdaq, b.nasdaq)),
     realestate_units_million: expInterp(a.realestate_units_million, b.realestate_units_million),
     realestate_median_usd: expInterp(a.realestate_median_usd, b.realestate_median_usd),
     realestate_mcap: expInterp(a.realestate_mcap, b.realestate_mcap),
@@ -245,6 +262,7 @@ function interpolate(a: AssetSnapshot, b: AssetSnapshot, year: number): AssetSna
     btc_supply: a.btc_supply === 0 && b.btc_supply === 0 ? 0 : linInterp(a.btc_supply, b.btc_supply),
     btc_price: a.btc_price === 0 && b.btc_price === 0 ? 0 : expInterp(Math.max(a.btc_price, 0.0000001), Math.max(b.btc_price, 0.0000001)),
     btc_mcap: a.btc_mcap === 0 && b.btc_mcap === 0 ? 0 : expInterp(Math.max(a.btc_mcap, 0.0000001), Math.max(b.btc_mcap, 0.0000001)),
+    m2_trillion: expInterp(a.m2_trillion, b.m2_trillion),
   };
 }
 
@@ -260,6 +278,16 @@ function generateData(): AssetDataPoint[] {
   const baseMedian = base.realestate_median_usd;
   const baseBonds = base.bonds_outstanding;
   const baseYield = base.bonds_yield; // 4.0% in 1913
+
+  // M2 ratio bases for indexing (base 100 = 1913)
+  const baseSP500M2 = base.sp500 / base.m2_trillion;                           // 8.04 / 0.015 = 536
+  const baseREM2 = base.realestate_median_usd / (base.m2_trillion * 1000);     // 3200 / 15 = 213.3
+  const baseBondM2 = (1 / base.bonds_yield) / base.m2_trillion;                // (1/4.0) / 0.015 = 16.67
+  const baseGoldM2 = base.gold_price / base.m2_trillion;                       // 20.67 / 0.015 = 1378
+
+  // Nasdaq base: first year with data (1971) — Nasdaq Composite launched at ~100
+  const nasdaqBaseYear = historicalAnchors.find(a => a.nasdaq > 0);
+  const baseNasdaqM2 = nasdaqBaseYear ? nasdaqBaseYear.nasdaq / nasdaqBaseYear.m2_trillion : 1; // 114.12 / 0.7103 = 160.66
 
   // BTC base: first year with supply (2009)
   const btcBaseYear = historicalAnchors.find(a => a.btc_supply > 0);
@@ -372,6 +400,18 @@ function generateData(): AssetDataPoint[] {
       btc_mcap: snap.btc_mcap > 0.0000001 ? +snap.btc_mcap.toFixed(4) : 0,
       btc_stock_to_flow: +btcS2F.toFixed(1),
       btc_supply_index: +btcSupplyIdx.toFixed(1),
+
+      m2_trillion: +snap.m2_trillion.toFixed(3),
+      sp500_m2_ratio: +(snap.sp500 / snap.m2_trillion).toFixed(2),
+      realestate_m2_ratio: +(snap.realestate_median_usd / (snap.m2_trillion * 1000)).toFixed(4),
+      bonds_m2_ratio: snap.bonds_yield > 0 ? +((1 / snap.bonds_yield) / snap.m2_trillion).toFixed(4) : 0,
+      sp500_m2_index: +((snap.sp500 / snap.m2_trillion) / baseSP500M2 * 100).toFixed(1),
+      realestate_m2_index: +((snap.realestate_median_usd / (snap.m2_trillion * 1000)) / baseREM2 * 100).toFixed(1),
+      bonds_m2_index: snap.bonds_yield > 0 ? +(((1 / snap.bonds_yield) / snap.m2_trillion) / baseBondM2 * 100).toFixed(1) : 0,
+      gold_m2_ratio: +(snap.gold_price / snap.m2_trillion).toFixed(2),
+      gold_m2_index: +((snap.gold_price / snap.m2_trillion) / baseGoldM2 * 100).toFixed(1),
+      nasdaq_price: +snap.nasdaq.toFixed(0),
+      nasdaq_m2_index: snap.nasdaq > 0 ? +((snap.nasdaq / snap.m2_trillion) / baseNasdaqM2 * 100).toFixed(1) : 0,
 
       numerator_index: +numeratorIdx.toFixed(1),
       total_mcap: +totalMcap.toFixed(2),
