@@ -33,7 +33,7 @@ export default async function Image() {
             height: "400px",
             borderRadius: "50%",
             background:
-              "radial-gradient(ellipse, rgba(0, 170, 255, 0.08) 0%, transparent 70%)",
+              "radial-gradient(ellipse, rgba(0, 255, 136, 0.08) 0%, transparent 70%)",
           }}
         />
 
@@ -56,12 +56,12 @@ export default async function Image() {
               height: "120px",
               borderRadius: "28px",
               background:
-                "linear-gradient(135deg, rgba(0,170,255,0.15), rgba(0,170,255,0.03))",
-              border: "1px solid rgba(0,170,255,0.25)",
+                "linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,255,136,0.03))",
+              border: "1px solid rgba(0,255,136,0.25)",
               boxShadow:
-                "0 0 60px rgba(0, 170, 255, 0.15), 0 0 120px rgba(0, 170, 255, 0.05)",
+                "0 0 60px rgba(0, 255, 136, 0.15), 0 0 120px rgba(0, 255, 136, 0.05)",
               fontSize: "64px",
-              color: "#00aaff",
+              color: "#00ff88",
               fontFamily: "monospace",
               fontWeight: 700,
             }}
@@ -95,7 +95,7 @@ export default async function Image() {
                 width: "300px",
                 height: "1px",
                 background:
-                  "linear-gradient(90deg, transparent, rgba(0,170,255,0.4), transparent)",
+                  "linear-gradient(90deg, transparent, rgba(0,255,136,0.4), transparent)",
               }}
             />
 
@@ -134,7 +134,7 @@ export default async function Image() {
             right: 0,
             height: "2px",
             background:
-              "linear-gradient(90deg, transparent, #00aaff, transparent)",
+              "linear-gradient(90deg, transparent, #00ff88, transparent)",
           }}
         />
       </div>

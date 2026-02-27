@@ -1,982 +1,236 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ComposedChart,
-  Line,
-  ReferenceLine,
-} from "recharts";
-import { assetData, getLatestMetrics } from "@/lib/data";
-import MetricCard from "./MetricCard";
-import ChartSection from "./ChartSection";
+import { useState } from "react";
 
-type TimeRange = "10Y" | "25Y" | "50Y" | "ALL";
-
-const DEFAULT_COLORS = {
-  blue: "#00aaff", blueDim: "#0088cc", green: "#00ff88",
-  purple: "#aa55ff", amber: "#ffaa00", red: "#ff3355",
-  cyan: "#00ddff", orange: "#ff8800", muted: "#55556a",
-};
-
-function useThemeColors() {
-  const getColors = useCallback(() => {
-    if (typeof window === "undefined") return DEFAULT_COLORS;
-    const s = getComputedStyle(document.documentElement);
-    const g = (v: string, fb: string) => s.getPropertyValue(v).trim() || fb;
-    return {
-      blue: g("--accent-blue", "#00aaff"),
-      blueDim: g("--accent-blue-dim", "#0088cc"),
-      green: g("--accent-green", "#00ff88"),
-      purple: g("--accent-purple", "#aa55ff"),
-      amber: g("--accent-amber", "#ffaa00"),
-      red: g("--accent-red", "#ff3355"),
-      cyan: g("--accent-cyan", "#00ddff"),
-      orange: "#ff8800",
-      muted: g("--text-muted", "#55556a"),
-    };
-  }, []);
-
-  const [colors, setColors] = useState(DEFAULT_COLORS);
-
-  useEffect(() => {
-    setColors(getColors());
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        if (m.attributeName === "data-theme") {
-          requestAnimationFrame(() => setColors(getColors()));
-        }
-      }
-    });
-    observer.observe(document.documentElement, { attributes: true });
-    return () => observer.disconnect();
-  }, [getColors]);
-
-  return colors;
+interface AssetTier {
+  name: string;
+  icon: string;
+  tier: string;
+  description: string;
+  supplyGrowth: string;
+  example: string;
+  highlight?: boolean;
 }
 
-function formatValue(v: number): string {
-  if (v >= 1) return `$${v.toFixed(2)}T`;
-  if (v >= 0.001) return `$${(v * 1000).toFixed(1)}B`;
-  return `$${(v * 1000000).toFixed(0)}M`;
-}
+const ASSET_TIERS: AssetTier[] = [
+  {
+    name: "Bitcoin",
+    icon: "\u20bf",
+    tier: "Nivel 5 \u2014 Escasez absoluta",
+    description: "21 millones de unidades. Nunca habr\u00e1 m\u00e1s. Sin banco central, sin emisi\u00f3n discrecional, verificable por cualquiera.",
+    supplyGrowth: "0% despu\u00e9s de 2140",
+    example: "1 BTC en 2015 = $300. Hoy = ~$97,000. No es que BTC subi\u00f3 \u2014 es que el denominador se achic\u00f3.",
+    highlight: true,
+  },
+  {
+    name: "Oro",
+    icon: "Au",
+    tier: "Nivel 4 \u2014 Escasez natural",
+    description: "Miner\u00eda agrega ~1.5% anual al stock existente. 5,000 a\u00f1os de historia monetaria. No se puede imprimir.",
+    supplyGrowth: "~1.5% anual",
+    example: "El oro pas\u00f3 de $270/oz (2000) a $2,850/oz (2025). Multiplic\u00f3 10x vs un denominador que multiplic\u00f3 7x.",
+  },
+  {
+    name: "Inmuebles",
+    icon: "\ud83c\udfe0",
+    tier: "Nivel 3 \u2014 Escasez local",
+    description: "No se pueden imprimir, pero s\u00ed construir. El suelo es finito, las regulaciones limitan oferta en las mejores ubicaciones.",
+    supplyGrowth: "~2-3% anual",
+    example: "En las mejores ciudades, los inmuebles capturan la expansi\u00f3n monetaria. En las peores, no.",
+  },
+  {
+    name: "Acciones",
+    icon: "\ud83d\udcc8",
+    tier: "Nivel 2 \u2014 Escasez productiva",
+    description: "Las mejores empresas tienen pricing power: suben precios con la inflaci\u00f3n. Generan flujos que crecen con el denominador.",
+    supplyGrowth: "Variable (recompras vs emisiones)",
+    example: "El S&P 500 subi\u00f3 ~750x desde 1913. Impresionante, pero el denominador subi\u00f3 ~3,400x.",
+  },
+  {
+    name: "Cash / Bonos",
+    icon: "\ud83d\udcb5",
+    tier: "Nivel 1 \u2014 Sin protecci\u00f3n",
+    description: "El efectivo ES el denominador. Los bonos pagan intereses que rara vez superan la expansi\u00f3n real. Ahorrar en fiat es perder en c\u00e1mara lenta.",
+    supplyGrowth: "7-15% anual (M2 global)",
+    example: "$100,000 ahorrados en 2000 compran hoy lo que $45,000 compraban entonces.",
+  },
+];
 
-function IndexTooltip({ active, payload, label }: any) {
-  if (!active || !payload) return null;
+function AssetCard({ asset, index }: { asset: AssetTier; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <div
-      className="rounded-lg px-4 py-3 text-xs"
-      style={{
-        background: "var(--bg-tooltip)",
-        border: "1px solid var(--border)",
-        backdropFilter: "blur(10px)",
-      }}
+      className={`card-glass rounded-xl p-5 sm:p-6 cursor-pointer fade-in-up fade-in-up-${Math.min(index + 1, 5)}`}
+      onClick={() => setExpanded(!expanded)}
+      style={asset.highlight ? { border: "1px solid var(--accent-border-active)" } : undefined}
     >
-      <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>
-        {label}
-      </p>
-      {payload.map((entry: any, i: number) => (
-        <div key={i} className="flex items-center gap-2 py-0.5">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ background: entry.color }}
-          />
-          <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
-          <span className="font-medium tabular-nums" style={{ color: entry.color }}>
-            {typeof entry.value === "number" ? (entry.value >= 1000 ? `${(entry.value / 1000).toFixed(1)}K` : entry.value.toFixed(1)) : entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload) return null;
-  return (
-    <div
-      className="rounded-lg px-4 py-3 text-xs"
-      style={{
-        background: "var(--bg-tooltip)",
-        border: "1px solid var(--border)",
-        backdropFilter: "blur(10px)",
-      }}
-    >
-      <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>
-        {label}
-      </p>
-      {payload.map((entry: any, i: number) => (
-        <div key={i} className="flex items-center gap-2 py-0.5">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ background: entry.color }}
-          />
-          <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
-          <span className="font-medium tabular-nums" style={{ color: entry.color }}>
-            {formatValue(entry.value)}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TimeRangeSelector({
-  range,
-  onChange,
-}: {
-  range: TimeRange;
-  onChange: (r: TimeRange) => void;
-}) {
-  const options: TimeRange[] = ["10Y", "25Y", "50Y", "ALL"];
-  return (
-    <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--controls-bg)", border: "1px solid var(--border-subtle)" }}>
-      {options.map((opt) => (
-        <button
-          key={opt}
-          onClick={() => onChange(opt)}
-          className="px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-[10px] tracking-wider uppercase transition-all"
+      <div className="flex items-start gap-4">
+        <div
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-lg sm:text-xl shrink-0"
           style={{
-            background:
-              range === opt
-                ? "var(--accent-blue-bg-active)"
-                : "transparent",
-            color:
-              range === opt
-                ? "var(--accent-blue)"
-                : "var(--text-muted)",
-            border:
-              range === opt
-                ? "1px solid var(--accent-blue-border-active)"
-                : "1px solid transparent",
-            boxShadow:
-              range === opt
-                ? "var(--accent-blue-glow)"
-                : "none",
+            background: asset.highlight ? "var(--accent-bg-active)" : "var(--accent-bg)",
+            border: `1px solid ${asset.highlight ? "var(--accent-border-active)" : "var(--accent-border)"}`,
           }}
         >
-          {opt}
-        </button>
-      ))}
+          {asset.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h3 className="font-serif text-base sm:text-lg" style={{ color: "var(--text-primary)" }}>
+              {asset.name}
+            </h3>
+            {asset.highlight && (
+              <span
+                className="text-[8px] tracking-wider uppercase px-2 py-0.5 rounded-full"
+                style={{ background: "var(--accent-bg-active)", color: "var(--accent)", border: "1px solid var(--accent-border)" }}
+              >
+                M&aacute;xima protecci&oacute;n
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] tracking-wider uppercase mb-2" style={{ color: "var(--text-muted)" }}>
+            {asset.tier}
+          </p>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            {asset.description}
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-[10px] tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>
+              Crecimiento de supply:
+            </span>
+            <span className="text-[10px] font-medium tabular-nums" style={{ color: asset.name === "Cash / Bonos" ? "var(--accent-red)" : "var(--accent)" }}>
+              {asset.supplyGrowth}
+            </span>
+          </div>
+          {expanded && (
+            <div className="mt-4 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+              <p className="text-xs italic leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                {asset.example}
+              </p>
+            </div>
+          )}
+        </div>
+        <span className="text-xs shrink-0 mt-1" style={{ color: "var(--text-muted)" }}>
+          {expanded ? "\u2212" : "+"}
+        </span>
+      </div>
     </div>
-  );
-}
-
-function ScaleToggle({ isLog, onToggle }: { isLog: boolean; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      className="px-3.5 py-1.5 rounded-md text-[10px] tracking-wider uppercase transition-all"
-      style={{
-        background: isLog ? "var(--accent-blue-bg-active)" : "transparent",
-        color: isLog ? "var(--accent-blue)" : "var(--text-muted)",
-        border: isLog ? "1px solid var(--accent-blue-border-active)" : "1px solid var(--border-subtle)",
-      }}
-    >
-      LOG
-    </button>
   );
 }
 
 export default function Dashboard() {
-  const [range, setRange] = useState<TimeRange>("ALL");
-  const [logScale, setLogScale] = useState(true);
-  const COLORS = useThemeColors();
-  const metrics = useMemo(() => getLatestMetrics(), []);
-
-  const filteredData = useMemo(() => {
-    if (range === "10Y") return assetData.slice(-10);
-    if (range === "25Y") return assetData.slice(-25);
-    if (range === "50Y") return assetData.slice(-50);
-    return assetData;
-  }, [range]);
-
-  // S&P/M2 chart: full history since 1913 (Fed creation) — the whole story
-  const espejismoData = useMemo(() => assetData, []);
-  const espejismoTicks = useMemo(() => {
-    const dates = espejismoData.map(d => d.date);
-    const ticks: string[] = [];
-    for (let y = 1920; y <= 2020; y += 20) {
-      const d = `${y}`;
-      if (dates.includes(d)) ticks.push(d);
-    }
-    if (!ticks.includes(dates[dates.length - 1])) ticks.push(dates[dates.length - 1]);
-    return ticks;
-  }, [espejismoData]);
-
-  const xTicks = useMemo(() => {
-    const dates = filteredData.map(d => d.date);
-    const span = dates.length;
-    if (span <= 12) return undefined;
-    const yearStep = span <= 25 ? 5 : span <= 60 ? 10 : 20;
-    const firstYear = parseInt(dates[0]);
-    const lastYear = parseInt(dates[dates.length - 1]);
-    const startYear = Math.ceil(firstYear / yearStep) * yearStep;
-    const ticks: string[] = [];
-    for (let y = startYear; y <= lastYear; y += yearStep) {
-      const d = `${y}`;
-      if (dates.includes(d)) ticks.push(d);
-    }
-    if (!ticks.includes(dates[0])) ticks.unshift(dates[0]);
-    if (!ticks.includes(dates[dates.length - 1])) ticks.push(dates[dates.length - 1]);
-    return ticks;
-  }, [filteredData]);
-
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
-      {/* ACT 1 — LA ILUSIÓN */}
-      <div className="mb-8 sm:mb-12 fade-in-up pt-4">
+      {/* Hero */}
+      <div className="mb-10 sm:mb-14 fade-in-up pt-4">
         <p
           className="font-serif text-3xl sm:text-4xl md:text-5xl leading-[1.15] tracking-tight"
           style={{ color: "var(--text-primary)" }}
         >
-          &iquest;Y si nada subi&oacute;?
+          Construye el numerador
+          <br />
+          <span className="glow-accent" style={{ color: "var(--accent)" }}>
+            que el sistema no puede tocar.
+          </span>
         </p>
         <p
-          className="mt-3 sm:mt-4 font-serif text-xl sm:text-2xl md:text-3xl leading-snug tracking-tight"
+          className="mt-3 sm:mt-4 text-xs sm:text-sm max-w-2xl leading-relaxed"
           style={{ color: "var(--text-secondary)" }}
         >
-          Todo precio es una fracci&oacute;n.
-          <br />
-          <span className="glow-blue" style={{ color: "var(--accent-blue)" }}>
-            El numerador tambi&eacute;n se mueve.
-          </span>
+          Si el denominador de cada precio &mdash; la moneda &mdash; se destruye por dise&ntilde;o,
+          la &uacute;nica defensa es acumular activos en el numerador que no se puedan
+          diluir. No es especulaci&oacute;n. Es protecci&oacute;n del poder adquisitivo frente
+          a la expansi&oacute;n monetaria inevitable.
         </p>
         <div className="divider-gradient mt-6 sm:mt-8" />
       </div>
 
-      {/* Time range + scale toggle */}
-      <div className="flex justify-end items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-        <ScaleToggle isLog={logScale} onToggle={() => setLogScale(!logScale)} />
-        <TimeRangeSelector range={range} onChange={setRange} />
-      </div>
-
-      {/* Metrics row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-10">
-        <MetricCard
-          label={metrics.numeratorIndex.label}
-          value={metrics.numeratorIndex.value}
-          change={metrics.numeratorIndex.change}
-          unit={metrics.numeratorIndex.unit}
-          delay={1}
-        />
-        <MetricCard
-          label={metrics.totalMcap.label}
-          value={metrics.totalMcap.value}
-          change={metrics.totalMcap.change}
-          unit={metrics.totalMcap.unit}
-          delay={2}
-        />
-        <MetricCard
-          label={metrics.goldS2F.label}
-          value={metrics.goldS2F.value}
-          change={metrics.goldS2F.change}
-          unit={metrics.goldS2F.unit}
-          delay={3}
-        />
-      </div>
-
-      {/* ACT 2 — LA MÁQUINA: Numerator Index */}
-      <ChartSection
-        title="La m&aacute;quina de crear activos"
-        subtitle="&Iacute;ndice compuesto de la oferta global de activos (oro, acciones, inmuebles, bonos, bitcoin), ponderado por market cap. Base 100 = 1913. Cada punto hacia arriba significa: hay m&aacute;s unidades de todo."
-        delay={3}
-      >
-        <div className="h-[250px] sm:h-[320px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={filteredData}>
-              <defs>
-                <linearGradient id="gradNum" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={COLORS.blue} stopOpacity={0.25} />
-                  <stop offset="100%" stopColor={COLORS.blue} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-              <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={xTicks} axisLine={false} tickLine={false} />
-              <YAxis
-                stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                scale={logScale ? "log" : "auto"} domain={logScale ? ["auto", "auto"] : ["auto", "auto"]}
-                allowDataOverflow={logScale}
-                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`}
-              />
-              <Tooltip content={<IndexTooltip />} />
-              <Area type="monotone" dataKey="numerator_index" name="Índice" stroke={COLORS.blue} fill="url(#gradNum)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+      {/* Asset hierarchy */}
+      <div className="mb-10 sm:mb-14">
+        <h2 className="font-serif text-xl sm:text-2xl mb-2" style={{ color: "var(--text-primary)" }}>
+          &iquest;Qu&eacute; protege tu numerador?
+        </h2>
+        <p className="text-xs sm:text-sm mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          No todos los activos son iguales. La jerarqu&iacute;a depende de una variable: qu&eacute; tan dif&iacute;cil es crear m&aacute;s unidades. Mientras m&aacute;s escaso, mejor protege.
+        </p>
+        <div className="space-y-3 sm:space-y-4">
+          {ASSET_TIERS.map((asset, i) => (
+            <AssetCard key={asset.name} asset={asset} index={i} />
+          ))}
         </div>
-      </ChartSection>
-
-      {/* ACT 2 cont. — Two column: Supply Indexed + Annual Dilution */}
-      <div className="grid lg:grid-cols-2 gap-4 sm:gap-5 mt-4 sm:mt-6">
-        {/* Supply Indexed — All assets */}
-        <ChartSection
-          title="No todos se multiplican igual"
-          subtitle="Oferta de cada activo indexada a base 100 en 1913. Los bonos se multiplicaron miles de veces. El oro apenas se movi&oacute;."
-          delay={4}
-        >
-          <div className="h-[220px] sm:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={filteredData}>
-                <defs>
-                  <linearGradient id="gradGoldS" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.amber} stopOpacity={0.1} />
-                    <stop offset="100%" stopColor={COLORS.amber} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={xTicks} axisLine={false} tickLine={false} />
-                <YAxis
-                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  scale={logScale ? "log" : "auto"} domain={logScale ? ["auto", "auto"] : [0, "auto"]}
-                  allowDataOverflow={logScale}
-                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`}
-                />
-                <Tooltip content={<IndexTooltip />} />
-                <Line type="monotone" dataKey="bonds_supply_index" name="Bonos" stroke={COLORS.cyan} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="equities_supply_index" name="Acciones" stroke={COLORS.purple} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="realestate_supply_index" name="Inmuebles" stroke={COLORS.red} strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="gold_supply_index" name="Oro" stroke={COLORS.amber} fill="url(#gradGoldS)" strokeWidth={2} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <ChartLegend
-            items={[
-              { color: COLORS.cyan, label: "Bonos" },
-              { color: COLORS.purple, label: "Acciones" },
-              { color: COLORS.red, label: "Inmuebles" },
-              { color: COLORS.amber, label: "Oro" },
-            ]}
-          />
-        </ChartSection>
-
-        {/* Annual Dilution — velocidad */}
-        <ChartSection
-          title="La velocidad de la diluci&oacute;n"
-          subtitle="Crecimiento anual (%) de la oferta de cada activo. El oro crece ~1.5% al a&ntilde;o. Los bonos y acciones, entre 3% y 8%. Bitcoin se acerca a cero."
-          delay={5}
-        >
-          <div className="h-[220px] sm:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={filteredData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={xTicks} axisLine={false} tickLine={false} />
-                <YAxis
-                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  tickFormatter={(v: number) => `${v}%`}
-                />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload) return null;
-                    return (
-                      <div
-                        className="rounded-lg px-4 py-3 text-xs"
-                        style={{ background: "var(--bg-tooltip)", border: "1px solid var(--border)", backdropFilter: "blur(10px)" }}
-                      >
-                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
-                        {payload.map((entry: any, i: number) => (
-                          <div key={i} className="flex items-center gap-2 py-0.5">
-                            <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
-                            <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
-                            <span className="font-medium tabular-nums" style={{ color: entry.color }}>
-                              {entry.value.toFixed(2)}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
-                <Line type="monotone" dataKey="dilution_yoy_gold" name="Oro" stroke={COLORS.amber} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="dilution_yoy_equities" name="Acciones" stroke={COLORS.purple} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="dilution_yoy_realestate" name="Inmuebles" stroke={COLORS.red} strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="dilution_yoy_bonds" name="Bonos" stroke={COLORS.cyan} strokeWidth={1.5} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <ChartLegend
-            items={[
-              { color: COLORS.amber, label: "Oro (~1.5%)" },
-              { color: COLORS.purple, label: "Acciones (~3-5%)" },
-              { color: COLORS.red, label: "Inmuebles (~2%)" },
-              { color: COLORS.cyan, label: "Bonos (~5-8%)" },
-            ]}
-          />
-        </ChartSection>
       </div>
 
-      {/* ACT 3 — NO TODOS SON IGUALES: Elasticidad */}
-      <div className="mt-4 sm:mt-6">
-        <ChartSection
-          title="La prueba del precio &mdash; Qui&eacute;n resiste y qui&eacute;n se rinde"
-          subtitle={`Cuando sube el precio de un activo, \u00bfsu oferta crece? L\u00ednea s\u00f3lida = oferta, punteada = precio (base 100 = 1913). Si la oferta sigue al precio, no hay escasez \u2014 hay una f\u00e1brica que responde a la demanda.`}
-          delay={5}
-        >
-          <div className="h-[250px] sm:h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={filteredData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={xTicks} axisLine={false} tickLine={false} />
-                <YAxis
-                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  scale={logScale ? "log" : "auto"} domain={logScale ? ["auto", "auto"] : [0, "auto"]}
-                  allowDataOverflow={logScale}
-                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`}
-                />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload) return null;
-                    const point = filteredData.find((d: any) => d.date === label);
-                    return (
-                      <div
-                        className="rounded-lg px-4 py-3 text-xs"
-                        style={{
-                          background: "var(--bg-tooltip)",
-                          border: "1px solid var(--border)",
-                          backdropFilter: "blur(10px)",
-                        }}
-                      >
-                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
-                        {payload.map((entry: any, i: number) => (
-                          <div key={i} className="flex items-center gap-2 py-0.5">
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{ background: entry.color }}
-                            />
-                            <span style={{ color: "var(--text-muted)" }}>{entry.name}:</span>
-                            <span className="font-medium tabular-nums" style={{ color: entry.color }}>
-                              {entry.value >= 1000 ? `${(entry.value / 1000).toFixed(1)}K` : entry.value.toFixed(0)}
-                            </span>
-                          </div>
-                        ))}
-                        {point && (
-                          <div className="mt-2 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-                            <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>Elasticidad oferta-precio</p>
-                            {point.elasticity_gold !== undefined && point.elasticity_gold !== 0 && (
-                              <div className="flex items-center gap-2 py-0.5">
-                                <span style={{ color: COLORS.amber }}>{point.elasticity_gold.toFixed(2)}</span>
-                                <span style={{ color: "var(--text-muted)" }}>Oro</span>
-                              </div>
-                            )}
-                            {point.elasticity_equities !== undefined && point.elasticity_equities !== 0 && (
-                              <div className="flex items-center gap-2 py-0.5">
-                                <span style={{ color: COLORS.purple }}>{point.elasticity_equities.toFixed(2)}</span>
-                                <span style={{ color: "var(--text-muted)" }}>Acciones</span>
-                              </div>
-                            )}
-                            {point.elasticity_realestate !== undefined && point.elasticity_realestate !== 0 && (
-                              <div className="flex items-center gap-2 py-0.5">
-                                <span style={{ color: COLORS.red }}>{point.elasticity_realestate.toFixed(2)}</span>
-                                <span style={{ color: "var(--text-muted)" }}>Inmuebles</span>
-                              </div>
-                            )}
-                            {point.elasticity_bonds !== undefined && point.elasticity_bonds !== 0 && (
-                              <div className="flex items-center gap-2 py-0.5">
-                                <span style={{ color: COLORS.cyan }}>{point.elasticity_bonds.toFixed(2)}</span>
-                                <span style={{ color: "var(--text-muted)" }}>Bonos</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }}
-                />
-                {/* Oro — oferta s\u00f3lida, precio punteado */}
-                <Line type="monotone" dataKey="gold_supply_index" name="Oro Oferta" stroke={COLORS.amber} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="gold_price_index" name="Oro Precio" stroke={COLORS.amber} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-                {/* Acciones — oferta s\u00f3lida, precio punteado */}
-                <Line type="monotone" dataKey="equities_supply_index" name="Acciones Oferta" stroke={COLORS.purple} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="equities_price_index" name="S&P 500 Precio" stroke={COLORS.purple} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-                {/* Inmuebles — oferta s\u00f3lida, precio punteado */}
-                <Line type="monotone" dataKey="realestate_supply_index" name="Inmuebles Oferta" stroke={COLORS.red} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="realestate_price_index" name="Inmuebles Precio" stroke={COLORS.red} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-                {/* Bonos — oferta s\u00f3lida, precio (1/yield) punteado */}
-                <Line type="monotone" dataKey="bonds_supply_index" name="Bonos Oferta" stroke={COLORS.cyan} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="bonds_price_index" name="Bonos Precio" stroke={COLORS.cyan} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
+      {/* Why Bitcoin */}
+      <div className="mb-10 sm:mb-14 fade-in-up">
+        <div className="card-glass card-accent-left rounded-xl p-6 sm:p-8">
+          <h2 className="font-serif text-xl sm:text-2xl mb-4" style={{ color: "var(--text-primary)" }}>
+            Por qu&eacute; Bitcoin espec&iacute;ficamente
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
+            {[
+              { title: "Oferta fija", desc: "21 millones. No hay comit\u00e9, junta directiva ni banco central que pueda cambiar esta regla. Es matem\u00e1tica, no pol\u00edtica." },
+              { title: "Verificable", desc: "Cualquiera puede auditar la oferta total en tiempo real. No necesitas confiar en nadie \u2014 solo en el c\u00f3digo abierto." },
+              { title: "Sin banco central", desc: "No hay un emisor que pueda decidir imprimir m\u00e1s. Es el primer activo monetario verdaderamente descentralizado." },
+              { title: "Portabilidad perfecta", desc: "Puedes mover miles de millones de d\u00f3lares en minutos, a cualquier parte del mundo, sin pedir permiso." },
+            ].map((item) => (
+              <div key={item.title} className="space-y-2">
+                <h3 className="text-sm font-medium" style={{ color: "var(--accent)" }}>
+                  {item.title}
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  {item.desc}
+                </p>
+              </div>
+            ))}
           </div>
-          <ChartLegend
-            items={[
-              { color: COLORS.amber, label: "Oro Oferta" },
-              { color: COLORS.amber, label: "Oro Precio", dashed: true },
-              { color: COLORS.purple, label: "Acciones Oferta" },
-              { color: COLORS.purple, label: "S&P 500 Precio", dashed: true },
-              { color: COLORS.red, label: "Inmuebles Oferta" },
-              { color: COLORS.red, label: "Inmuebles Precio", dashed: true },
-              { color: COLORS.cyan, label: "Bonos Oferta" },
-              { color: COLORS.cyan, label: "Bonos Precio (1/yield)", dashed: true },
-            ]}
-          />
-        </ChartSection>
+          <div className="divider-gradient mb-5" />
+          <div className="card-glass rounded-lg p-4 sm:p-5">
+            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              <span className="font-medium" style={{ color: "var(--accent)" }}>El contraste: </span>
+              1 BTC en 2015 = $300. Hoy = ~$97,000. En el mismo per&iacute;odo, el M2 de EE.UU. pas&oacute; de $12.3T a $22.3T &mdash; el denominador casi se duplic&oacute;. El numerador (BTC) se multiplic&oacute; 320x. Esto no es rendimiento especulativo &mdash; es un activo escaso capturando la destrucci&oacute;n del denominador.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* ACT 4b — EL ESPEJISMO: Market Cap nominal */}
-      <div className="mt-4 sm:mt-6">
-        <ChartSection
-          title="El espejismo del crecimiento"
-          subtitle="Capitalizaci&oacute;n total por clase de activo en USD nominales. &iquest;Cu&aacute;nto es riqueza real y cu&aacute;nto es el denominador (el d&oacute;lar) achic&aacute;ndose?"
-          delay={5}
-        >
-          <div className="h-[250px] sm:h-[340px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={filteredData}>
-                <defs>
-                  <linearGradient id="gradGoldMcap" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.amber} stopOpacity={0.5} />
-                    <stop offset="100%" stopColor={COLORS.amber} stopOpacity={0.05} />
-                  </linearGradient>
-                  <linearGradient id="gradEqMcap" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.purple} stopOpacity={0.5} />
-                    <stop offset="100%" stopColor={COLORS.purple} stopOpacity={0.05} />
-                  </linearGradient>
-                  <linearGradient id="gradREMcap" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.red} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={COLORS.red} stopOpacity={0.05} />
-                  </linearGradient>
-                  <linearGradient id="gradBondsMcap" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.cyan} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={COLORS.cyan} stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={xTicks} axisLine={false} tickLine={false} />
-                <YAxis
-                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  tickFormatter={(v: number) => `$${v}T`}
-                />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload) return null;
-                    const point = filteredData.find((d: any) => d.date === label);
-                    if (!point) return null;
-                    const total = point.realestate_mcap + point.bonds_mcap + point.equities_mcap + point.gold_mcap;
-                    const items = [
-                      { label: "Inmuebles", value: point.realestate_mcap, color: COLORS.red },
-                      { label: "Bonos", value: point.bonds_mcap, color: COLORS.cyan },
-                      { label: "Acciones", value: point.equities_mcap, color: COLORS.purple },
-                      { label: "Oro", value: point.gold_mcap, color: COLORS.amber },
-                    ];
-                    return (
-                      <div
-                        className="rounded-lg px-4 py-3 text-xs"
-                        style={{ background: "var(--bg-tooltip)", border: "1px solid var(--border)", backdropFilter: "blur(10px)" }}
-                      >
-                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
-                        {items.map((item) => (
-                          <div key={item.label} className="flex items-center gap-2 py-0.5">
-                            <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                            <span style={{ color: "var(--text-muted)" }}>{item.label}:</span>
-                            <span className="font-medium tabular-nums" style={{ color: item.color }}>
-                              ${item.value.toFixed(1)}T
-                            </span>
-                          </div>
-                        ))}
-                        <div className="mt-1 pt-1" style={{ borderTop: "1px solid var(--border)" }}>
-                          <div className="flex items-center gap-2 py-0.5">
-                            <span style={{ color: "var(--text-muted)" }}>Total:</span>
-                            <span className="font-medium tabular-nums" style={{ color: "var(--text-primary)" }}>
-                              ${total.toFixed(1)}T
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-                <Area type="monotone" dataKey="realestate_mcap" name="Inmuebles" stackId="1" stroke={COLORS.red} fill="url(#gradREMcap)" strokeWidth={1.5} />
-                <Area type="monotone" dataKey="bonds_mcap" name="Bonos" stackId="1" stroke={COLORS.cyan} fill="url(#gradBondsMcap)" strokeWidth={1.5} />
-                <Area type="monotone" dataKey="equities_mcap" name="Acciones" stackId="1" stroke={COLORS.purple} fill="url(#gradEqMcap)" strokeWidth={1.5} />
-                <Area type="monotone" dataKey="gold_mcap" name="Oro" stackId="1" stroke={COLORS.amber} fill="url(#gradGoldMcap)" strokeWidth={1.5} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          <ChartLegend
-            items={[
-              { color: COLORS.red, label: "Inmuebles" },
-              { color: COLORS.cyan, label: "Bonos" },
-              { color: COLORS.purple, label: "Acciones" },
-              { color: COLORS.amber, label: "Oro" },
-            ]}
-          />
-        </ChartSection>
-      </div>
-
-      {/* ACT 4c — LA REALIDAD: Activos / M2 */}
-      <div className="mt-4 sm:mt-6">
-        <ChartSection
-          title="La realidad detr&aacute;s del espejismo"
-          subtitle="Precio de cada activo dividido por M2, indexado base 100 en 1913. Descontando la impresi&oacute;n de d&oacute;lares, ning&uacute;n activo tradicional conserva su poder adquisitivo."
-          delay={5}
-        >
-          <div className="h-[250px] sm:h-[340px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={espejismoData}>
-                <defs>
-                  <linearGradient id="gradSPM2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.purple} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={COLORS.purple} stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="gradREM2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.red} stopOpacity={0.25} />
-                    <stop offset="100%" stopColor={COLORS.red} stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="gradBondM2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.cyan} stopOpacity={0.25} />
-                    <stop offset="100%" stopColor={COLORS.cyan} stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="gradGoldM2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.amber} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={COLORS.amber} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} ticks={espejismoTicks} axisLine={false} tickLine={false} />
-                <YAxis
-                  scale="log" domain={['auto', 'auto']}
-                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  tickFormatter={(v: number) => v.toFixed(0)}
-                  allowDataOverflow
-                />
-                <ReferenceLine y={100} stroke="var(--text-muted)" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.5} label={{ value: "Base 100 (1913)", position: "insideBottomRight", fill: "var(--text-muted)", fontSize: 9 }} />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload) return null;
-                    const point = espejismoData.find((d: any) => d.date === label);
-                    if (!point) return null;
-                    const loss = (idx: number) => idx >= 100 ? `+${(idx - 100).toFixed(0)}%` : `${(idx - 100).toFixed(idx < 1 ? 1 : 0)}%`;
-                    const items = [
-                      { label: "Acciones", idx: point.sp500_m2_index, color: COLORS.purple },
-                      { label: "Oro", idx: point.gold_m2_index, color: COLORS.amber },
-                      { label: "Vivienda", idx: point.realestate_m2_index, color: COLORS.red },
-                      { label: "Bonos", idx: point.bonds_m2_index, color: COLORS.cyan },
-                    ];
-                    return (
-                      <div
-                        className="rounded-lg px-4 py-3 text-xs"
-                        style={{ background: "var(--bg-tooltip)", border: "1px solid var(--border)", backdropFilter: "blur(10px)" }}
-                      >
-                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
-                        {items.map((item) => (
-                          <div key={item.label} className="flex items-center justify-between gap-3 py-0.5">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                              <span style={{ color: "var(--text-muted)" }}>{item.label}:</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium tabular-nums" style={{ color: item.color }}>
-                                {item.idx.toFixed(1)}
-                              </span>
-                              <span className="tabular-nums" style={{ color: item.idx >= 100 ? COLORS.green : COLORS.red, fontSize: "10px" }}>
-                                {loss(item.idx)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                        <div className="mt-1 pt-1" style={{ borderTop: "1px solid var(--border)" }}>
-                          <div className="flex items-center justify-between gap-3 py-0.5">
-                            <span style={{ color: "var(--text-muted)" }}>M2:</span>
-                            <span className="font-medium tabular-nums" style={{ color: "var(--text-primary)" }}>
-                              ${point.m2_trillion.toFixed(1)}T
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-                <Area type="monotone" dataKey="sp500_m2_index" name="S&P 500 / M2" stroke={COLORS.purple} fill="url(#gradSPM2)" strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="realestate_m2_index" name="Vivienda / M2" stroke={COLORS.red} fill="url(#gradREM2)" strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="bonds_m2_index" name="Bonos / M2" stroke={COLORS.cyan} fill="url(#gradBondM2)" strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="gold_m2_index" name="Oro / M2" stroke={COLORS.amber} fill="url(#gradGoldM2)" strokeWidth={2} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <ChartLegend
-            items={[
-              { color: COLORS.purple, label: "S&P 500 / M2" },
-              { color: COLORS.amber, label: "Oro / M2" },
-              { color: COLORS.cyan, label: "Bonos / M2" },
-              { color: COLORS.red, label: "Vivienda / M2" },
-            ]}
-          />
-        </ChartSection>
-      </div>
-
-      {/* ACT 5 — EL ANTÍDOTO: Bitcoin Supply */}
-      <div className="mt-4 sm:mt-6">
-        <ChartSection
-          title="21 millones &mdash; El ant&iacute;doto"
-          subtitle="Supply en circulaci&oacute;n vs m&aacute;ximo absoluto de 21M. Cada halving reduce la emisi&oacute;n a la mitad. Ya se min&oacute; el 94.4%. No hay CEO que emita m&aacute;s, no hay banco central que lo decida, no hay congreso que lo vote."
-          delay={5}
-        >
-          <div className="h-[220px] sm:h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={filteredData.filter(d => parseInt(d.date) >= 2009)}>
-                <defs>
-                  <linearGradient id="gradBTCSupply" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.orange} stopOpacity={0.3} />
-                    <stop offset="100%" stopColor={COLORS.orange} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis
-                  stroke="var(--text-muted)" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                  tickFormatter={(v: number) => `${(v / 1000000).toFixed(0)}M`}
-                  domain={[0, 21000000]}
-                />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload) return null;
-                    const point = filteredData.find((d: any) => d.date === label);
-                    if (!point) return null;
-                    return (
-                      <div
-                        className="rounded-lg px-4 py-3 text-xs"
-                        style={{ background: "var(--bg-tooltip)", border: "1px solid var(--border)", backdropFilter: "blur(10px)" }}
-                      >
-                        <p className="mb-2 font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
-                        <div className="flex items-center gap-2 py-0.5">
-                          <div className="w-2 h-2 rounded-full" style={{ background: COLORS.orange }} />
-                          <span style={{ color: "var(--text-muted)" }}>Supply:</span>
-                          <span className="font-medium tabular-nums" style={{ color: COLORS.orange }}>
-                            {(point.btc_supply / 1000000).toFixed(2)}M BTC
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 py-0.5">
-                          <div className="w-2 h-2 rounded-full" style={{ background: COLORS.muted }} />
-                          <span style={{ color: "var(--text-muted)" }}>Minado:</span>
-                          <span className="font-medium tabular-nums" style={{ color: "var(--text-primary)" }}>
-                            {point.btc_pct_mined.toFixed(1)}%
-                          </span>
-                        </div>
-                        {point.btc_price_usd > 0 && (
-                          <div className="flex items-center gap-2 py-0.5">
-                            <div className="w-2 h-2 rounded-full" style={{ background: COLORS.amber }} />
-                            <span style={{ color: "var(--text-muted)" }}>Precio:</span>
-                            <span className="font-medium tabular-nums" style={{ color: COLORS.amber }}>
-                              ${point.btc_price_usd.toLocaleString()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }}
-                />
-                <Area type="monotone" dataKey="btc_supply" name="BTC Supply" stroke={COLORS.orange} fill="url(#gradBTCSupply)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartSection>
-
-        {/* Closing message — ACT 5 cierre */}
-        <div className="mt-10 mb-10 sm:mt-16 sm:mb-16 fade-in-up text-center">
-          <div className="divider-gradient mb-6 sm:mb-8" />
-          <p
-            className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight tracking-tight"
-            style={{ color: "var(--text-primary)" }}
-          >
-            El dinero se diluye. Los activos tambi&eacute;n.
+      {/* Central insight */}
+      <div className="mb-10 sm:mb-14 fade-in-up">
+        <div className="card-glass rounded-xl p-6 sm:p-8 text-center">
+          <p className="font-serif text-lg sm:text-xl mb-3" style={{ color: "var(--text-primary)" }}>
+            El insight central
           </p>
-          <p
-            className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight tracking-tight mt-2"
-            style={{ color: "var(--text-primary)" }}
-          >
-            La escasez no se imprime, no se legisla, no se negocia.
+          <p className="text-sm sm:text-base max-w-2xl mx-auto leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            No necesitas &ldquo;ganarle al mercado.&rdquo; Solo necesitas que tu numerador crezca m&aacute;s r&aacute;pido que el denominador. Si ahorras en efectivo, pierdes. Si acumulas activos escasos, proteges. Es as&iacute; de simple.
           </p>
-          <p
-            className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight tracking-tight mt-2"
-            style={{ color: "var(--text-primary)" }}
-          >
-            <span className="glow-blue" style={{ color: "var(--accent-blue)" }}>
-              Se defiende con matem&aacute;ticas.
-            </span>
-          </p>
-          <div className="divider-gradient mt-6 sm:mt-8" />
-        </div>
-
-        {/* Supuestos y definiciones */}
-        <div className="mt-10 sm:mt-16 fade-in-up">
-          <div className="divider-gradient mb-8" />
-          <h3
-            className="font-serif text-lg tracking-wide mb-6"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Supuestos y definiciones
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            <div>
-              <p className="uppercase tracking-widest mb-2" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                &iquest;Qu&eacute; es una &ldquo;unidad&rdquo; de cada activo?
-              </p>
-              <ul className="space-y-2">
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Oro:</span> Toneladas m&eacute;tricas de oro sobre tierra (above-ground stock). Incluye joyer&iacute;a, reservas de bancos centrales, inversi&oacute;n y uso industrial. No incluye reservas bajo tierra sin minar.
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Acciones:</span> Total de acciones en circulaci&oacute;n (shares outstanding) a nivel global, en miles de millones. Incluye todas las bolsas reportadas por la World Federation of Exchanges.
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Inmuebles:</span> Unidades de vivienda globales, en millones. Incluye vivienda residencial (casas, departamentos, unidades habitacionales). No incluye inmuebles comerciales ni terrenos sin construir.
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Bonos:</span> Deuda global outstanding en billones (trillones anglosajones) de USD. Incluye deuda soberana, corporativa y supranacional.
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Bitcoin:</span> BTC en circulaci&oacute;n seg&uacute;n la blockchain. M&aacute;ximo te&oacute;rico: 21.000.000 BTC.
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="uppercase tracking-widest mb-2" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                Supuestos del modelo
-              </p>
-              <ul className="space-y-2">
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Base del &iacute;ndice:</span> Todos los &iacute;ndices de oferta y precio usan base 100&nbsp;=&nbsp;1913, excepto Bitcoin que usa base 100&nbsp;=&nbsp;2009 (a&ntilde;o de g&eacute;nesis).
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Interpolaci&oacute;n:</span> Entre puntos ancla verificados se usa interpolaci&oacute;n exponencial (asume crecimiento compuesto constante entre a&ntilde;os con datos).
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Precios:</span> Oro en USD/oz troy. Acciones medidas por el S&amp;P 500 (cierre de a&ntilde;o). Inmuebles por precio mediano de venta en EE.UU. (FRED MSPUS). Bonos: inversa del yield del bono a 10 a&ntilde;os de EE.UU. (1/yield) &mdash; cuando el yield baja, el precio del bono sube. Bitcoin en USD (cierre de a&ntilde;o).
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Stock-to-Flow:</span> Calculado como stock existente / producci&oacute;n anual. Para Bitcoin, la emisi&oacute;n anual se calcula con las fechas reales de halving (2012, 2016, 2020, 2024) y 144 bloques/d&iacute;a.
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Elasticidad:</span> Mide cu&aacute;nto responde la oferta a cambios en el precio. Se calcula como %&Delta;oferta&nbsp;/&nbsp;%&Delta;precio en ventana m&oacute;vil de 10 a&ntilde;os. Un valor cercano a 0 indica oferta in&eacute;lastica (ej. oro); mayor que 0 indica que la oferta reacciona al precio.
-                </li>
-                <li>
-                  <span style={{ color: "var(--text-secondary)" }}>Market cap:</span> Capitalizaci&oacute;n en USD nominales (no ajustados por inflaci&oacute;n). El &iacute;ndice numerador se pondera din&aacute;micamente por el peso de cada clase de activo en el market cap total.
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Sources */}
-        <div className="mt-10 sm:mt-16 fade-in-up">
-          <div className="divider-gradient mb-8" />
-          <h3
-            className="font-serif text-lg tracking-wide mb-6"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Fuentes
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            <div>
-              <p className="uppercase tracking-widest mb-2" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                Oro
-              </p>
-              <ul className="space-y-1">
-                <li>
-                  <a href="https://www.gold.org/goldhub/data/gold-prices" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>World Gold Council</a> &mdash; Stock sobre tierra, producci&oacute;n anual, precio del oro
-                </li>
-              </ul>
-
-              <p className="uppercase tracking-widest mb-2 mt-6" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                Bitcoin
-              </p>
-              <ul className="space-y-1">
-                <li>
-                  <a href="https://coinmarketcap.com/currencies/bitcoin/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>CoinMarketCap</a> &mdash; Supply, precio, capitalizaci&oacute;n
-                </li>
-                <li>
-                  <a href="https://blockchain.com/explorer" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>Blockchain.com</a> &mdash; Supply exacto on-chain
-                </li>
-              </ul>
-
-              <p className="uppercase tracking-widest mb-2 mt-6" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                Acciones
-              </p>
-              <ul className="space-y-1">
-                <li>
-                  <a href="https://data.worldbank.org/indicator/CM.MKT.LCAP.CD" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>World Bank</a> &mdash; Capitalizaci&oacute;n burs&aacute;til global
-                </li>
-                <li>
-                  <a href="https://www.world-exchanges.org/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>WFE</a> &mdash; Acciones outstanding, empresas listadas
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="uppercase tracking-widest mb-2" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                Inmuebles
-              </p>
-              <ul className="space-y-1">
-                <li>
-                  <a href="https://www.savills.com/impacts/market-trends/the-total-value-of-global-real-estate.html" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>Savills</a> &mdash; Valor total del mercado inmobiliario global
-                </li>
-                <li>
-                  <a href="https://unhabitat.org/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>UN-Habitat</a> &mdash; Unidades de vivienda globales
-                </li>
-              </ul>
-
-              <p className="uppercase tracking-widest mb-2 mt-6" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                Bonos
-              </p>
-              <ul className="space-y-1">
-                <li>
-                  <a href="https://www.bis.org/statistics/secstats.htm" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>BIS</a> &mdash; Estad&iacute;sticas de deuda internacional
-                </li>
-                <li>
-                  <a href="https://www.sifma.org/resources/research/fact-book/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent-blue)" }}>SIFMA</a> &mdash; Mercados globales de renta fija
-                </li>
-              </ul>
-
-              <p className="uppercase tracking-widest mb-2 mt-6" style={{ color: "var(--text-secondary)", fontSize: "10px" }}>
-                Metodolog&iacute;a
-              </p>
-              <p>
-                Datos hist&oacute;ricos pre-1970 interpolados con crecimiento exponencial entre
-                puntos ancla verificados. &Iacute;ndice numerador: ponderado por market cap relativo
-                de cada clase de activo, base 100&nbsp;=&nbsp;1913. Stock-to-flow calculado como
-                stock&nbsp;/&nbsp;producci&oacute;n anual.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-/* Small legend component */
-function ChartLegend({
-  items,
-}: {
-  items: { color: string; label: string; dashed?: boolean }[];
-}) {
-  return (
-    <div className="flex flex-wrap gap-4 mt-4 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-      {items.map((item) => (
-        <div key={item.label} className="flex items-center gap-2">
-          {item.dashed ? (
-            <div
-              className="w-4 h-0"
-              style={{
-                borderTop: `2px dashed ${item.color}`,
-              }}
-            />
-          ) : (
-            <div
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: item.color }}
-            />
-          )}
-          <span className="text-[10px] tracking-wider" style={{ color: "var(--text-muted)" }}>
-            {item.label}
-          </span>
+      {/* CTA to Los Ratios */}
+      <div className="mt-12 sm:mt-16 text-center fade-in-up">
+        <div className="card-glass rounded-xl p-8 sm:p-12 max-w-2xl mx-auto">
+          <p className="font-serif text-lg sm:text-xl mb-3" style={{ color: "var(--text-primary)" }}>
+            Ya entiendes el numerador. Ahora aprende a medirlo.
+          </p>
+          <p className="text-xs sm:text-sm mb-6 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            Los ratios entre activos revelan qu&eacute; est&aacute; caro, qu&eacute; est&aacute; barato, y cu&aacute;ndo acumular. BTC/Oro, Casa/Salario, S&amp;P/M2 &mdash; cada ratio cuenta una historia.
+          </p>
+          <a
+            href="https://losratios.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+            style={{
+              background: "var(--accent-bg-active)",
+              border: "1px solid var(--accent-border-active)",
+              color: "var(--accent)",
+            }}
+          >
+            Aprende a leer los ratios
+            <span>&rarr;</span>
+          </a>
         </div>
-      ))}
+      </div>
     </div>
   );
 }
