@@ -223,24 +223,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Central insight — double illusion */}
-      <div className="mb-10 sm:mb-14 fade-in-up">
-        <div className="card-glass rounded-xl p-6 sm:p-8 text-center">
-          <p className="font-serif text-lg sm:text-xl mb-3" style={{ color: "var(--text-primary)" }}>
-            La doble ilusi&oacute;n
-          </p>
-          <p className="text-sm sm:text-base max-w-2xl mx-auto leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            Si el denominador se expande y la oferta del numerador
-            tambi&eacute;n crece, el precio sube &mdash; pero el valor real no
-            se mueve. Es medir con una regla que se encoge algo que se estira.
-            Dos distorsiones opuestas, una sola cifra nominal que las esconde.
-            La pregunta correcta no es &ldquo;&iquest;cu&aacute;nto
-            subi&oacute; mi activo?&rdquo; sino &ldquo;&iquest;cu&aacute;nto
-            creci&oacute; su oferta?&rdquo;
-          </p>
-        </div>
-      </div>
-
       {/* CTA to Los Ratios */}
       <div className="mt-12 sm:mt-16 text-center fade-in-up">
         <div className="card-glass rounded-xl p-8 sm:p-12 max-w-2xl mx-auto">
