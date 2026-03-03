@@ -46,7 +46,7 @@ export default async function Image() {
             gap: "32px",
           }}
         >
-          {/* x symbol with glow box */}
+          {/* Arrow up symbol with glow box */}
           <div
             style={{
               display: "flex",
@@ -60,13 +60,13 @@ export default async function Image() {
               border: "1px solid rgba(0,255,136,0.25)",
               boxShadow:
                 "0 0 60px rgba(0, 255, 136, 0.15), 0 0 120px rgba(0, 255, 136, 0.05)",
-              fontSize: "64px",
+              fontSize: "72px",
               color: "#00ff88",
               fontFamily: "monospace",
               fontWeight: 700,
             }}
           >
-            &times;
+            ↑
           </div>
 
           {/* Title */}
