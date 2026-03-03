@@ -46,10 +46,11 @@ export default async function Image() {
             gap: "32px",
           }}
         >
-          {/* Arrow up symbol with glow box */}
+          {/* Expanding bars icon with glow box */}
           <div
             style={{
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               width: "120px",
@@ -60,13 +61,27 @@ export default async function Image() {
               border: "1px solid rgba(0,255,136,0.25)",
               boxShadow:
                 "0 0 60px rgba(0, 255, 136, 0.15), 0 0 120px rgba(0, 255, 136, 0.05)",
-              fontSize: "72px",
-              color: "#00ff88",
-              fontFamily: "monospace",
-              fontWeight: 700,
+              gap: "8px",
             }}
           >
-            ↑
+            {[
+              { width: "70px", opacity: 0.92, height: "5px" },
+              { width: "56px", opacity: 0.70, height: "4.5px" },
+              { width: "42px", opacity: 0.48, height: "4px" },
+              { width: "28px", opacity: 0.32, height: "3.5px" },
+              { width: "14px", opacity: 0.18, height: "3px" },
+            ].map((bar, i) => (
+              <div
+                key={i}
+                style={{
+                  width: bar.width,
+                  height: bar.height,
+                  borderRadius: "3px",
+                  background: "#00ff88",
+                  opacity: bar.opacity,
+                }}
+              />
+            ))}
           </div>
 
           {/* Title */}

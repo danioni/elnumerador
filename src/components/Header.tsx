@@ -121,8 +121,11 @@ export default function Header() {
                 </filter>
               </defs>
               <g filter="url(#header-neon)">
-                <line x1="32" y1="12" x2="32" y2="52" stroke="#00ff88" strokeWidth="7" strokeLinecap="round"/>
-                <polyline points="15,32 32,12 49,32" stroke="#00ff88" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <line x1="28" y1="48" x2="36" y2="48" stroke="#00ff88" strokeWidth="2" strokeLinecap="round" opacity="0.18"/>
+                <line x1="24" y1="40" x2="40" y2="40" stroke="#00ff88" strokeWidth="2.5" strokeLinecap="round" opacity="0.32"/>
+                <line x1="20" y1="32" x2="44" y2="32" stroke="#00ff88" strokeWidth="3" strokeLinecap="round" opacity="0.48"/>
+                <line x1="17" y1="24" x2="47" y2="24" stroke="#00ff88" strokeWidth="3.5" strokeLinecap="round" opacity="0.70"/>
+                <line x1="14" y1="16" x2="50" y2="16" stroke="#00ff88" strokeWidth="4" strokeLinecap="round" opacity="0.92"/>
               </g>
             </svg>
           </div>
